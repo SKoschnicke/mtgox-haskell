@@ -1,3 +1,12 @@
+-- |
+-- Module      :  Mtgox
+-- Copyright   :  Robin S. Krom 2013
+-- License     :  BSD3
+-- 
+-- Maintainer  :  Robin S. Krom
+-- Stability   :  experimental
+-- Portability :  unknown
+--
 {-# LANGUAGE OverloadedStrings #-}
 
 module Mtgox (

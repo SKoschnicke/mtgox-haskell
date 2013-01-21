@@ -1,3 +1,6 @@
+-- Most of this code comes from the TLS package.
+-- http://hackage.haskell.org/package/tls.
+--
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module TLS (
