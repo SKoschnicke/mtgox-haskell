@@ -199,18 +199,23 @@ instance FromJSON TradeType where
 	parseJSON (String s) = if s == "bid" then return Bid else return Ask 
 	parseJSON _ = mzero
 
+-- | Adds a websocket frame.
 frame :: LC.ByteString -> LC.ByteString
 frame = ((flip LC.snoc) '\xff') . (LC.cons '\x00')
 
+-- | Removes a websocket frame.
 unframe :: BC.ByteString -> BC.ByteString
 unframe = BC.init . BC.tail
 
+-- | Splits a bytestring into its socket.io header and tail.
 splitHeader :: BC.ByteString -> (BC.ByteString, BC.ByteString)
 splitHeader bs = BC.splitAt 3 $ unframe bs
 
+-- | Parses the session id from the connection response.
 parseSid :: BC.ByteString -> String
 parseSid = takeWhile (/=':') . (!! 6) . lines . BC.unpack
 
+-- | Connects to mtgox and runs the provided app.
 connect :: (Context -> IO a) -> IO a
 connect app = do 
 	certStore <- getSystemCertificateStore 

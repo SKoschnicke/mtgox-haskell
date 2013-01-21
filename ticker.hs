@@ -5,6 +5,7 @@ import Data.Aeson (decode)
 import Network.TLS
 import Mtgox
 
+-- | Receives a JSON encoded message.
 ticker :: Context -> IO (Maybe GoxMessage)
 ticker ctx = do 
 		d <- recvData ctx
