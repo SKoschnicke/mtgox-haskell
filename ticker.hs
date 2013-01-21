@@ -18,4 +18,4 @@ ticker ctx = do
 			_ -> return Nothing
 
 main :: IO ()
-main = connect $ (\c -> forever (ticker c >>= print)) 
+main = connect (\c -> forever (ticker c >>= print)) 
