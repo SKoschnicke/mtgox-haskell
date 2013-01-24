@@ -1,6 +1,5 @@
 import qualified Data.ByteString.Lazy.Char8 as LC
 import qualified Data.ByteString.Char8 as BC
-import Control.Monad (forever)
 import Data.Aeson (decode)
 import Network.TLS
 import Mtgox
@@ -18,5 +17,22 @@ ticker ctx = do
 			-- ignore the rest.
 			_ -> return Nothing
 
+orderBook :: OrderBook -> Context -> IO (OrderBook)
+orderBook ob ctx = do
+	m_msg <- ticker ctx
+	return $ updateOrderBook m_msg ob
+
 main :: IO ()
-main = connect (\c -> forever (ticker c >>= print)) 
+main = let go ob ctx = do
+						ob' <- orderBook ob ctx  
+						print ob'
+						go ob' ctx
+		in
+		connect $ go (OrderBook [] [])
+
+{-main = let go ctx = do-}
+						{-m_msg <- ticker ctx-}
+						{-print m_msg-}
+						{-go ctx-}
+		{-in-}
+		{-connect go-}

@@ -27,7 +27,9 @@ TickerMsg (..),
 TickerPrice (..),
 TradeMsg (..),
 DepthMsg (..),
-TradeType (..)
+TradeType (..),
+OrderBook (..),
+updateOrderBook
 )
 where
 
@@ -39,6 +41,7 @@ import Network.Socket (PortNumber)
 import qualified Data.ByteString.Char8 as BC
 import System.Certificate.X509
 import qualified Data.ByteString.Lazy.Char8 as LC
+import Text.PrettyPrint.Boxes
 import Network.TLS
 import Data.IORef
 import TLS
@@ -245,3 +248,61 @@ connect app = do
 			BC.putStrLn d'
 			sendData ctx $ frame $ LC.pack "1::/mtgox"
 			app ctx
+
+-- | Inserts (key, value) pairs into an ordered list.
+insertWith :: (k -> k -> Ordering) 		-- ^ comparision function.
+				-> ((k, v) -> [(k, v)]) -- ^ update function, needs to preserve order, i.e x < y => f x < f y.
+				-> ((k, v) -> [(k, v)]) -- ^ insert function.
+				-> (k, v) 				-- ^ element to insert.
+				-> [(k, v)] 			-- ^ ordered list.
+				-> [(k, v)]
+insertWith _ _ insert x [] = insert x
+insertWith comp update insert (x,a) ys@((y, b) : [])= case comp x y of
+									LT -> (insert (x,a)) ++ ys
+									GT -> (y, b) : (insert (x, a)) 
+									EQ -> (update (y, b))
+insertWith comp update insert (x,a) xs = 
+	let	n = (length xs) `div` 2
+		(l,r) = splitAt n xs
+		(p, c) = xs !! n
+	in
+		case comp x p of
+		LT -> (insertWith comp update insert (x,a) l) ++ r
+		GT -> l ++ (insertWith comp update insert (x,a) r)
+		EQ -> l ++ update (p,c) ++ tail r
+
+
+data OrderBook = OrderBook { bids :: [(Integer, Integer)], asks :: [(Integer, Integer)]}
+
+instance Show OrderBook where
+	show ob = 
+		let 	
+			bid_box = vcat left $ map text $ "bids:" : map show (take 10 $ bids ob)
+			ask_box = vcat left $ map text $ "asks:" : map show (take 10 $ asks ob)
+		in
+			render $ hsep 4 top [bid_box, ask_box]
+
+updateOrderBook :: Maybe GoxMessage -> OrderBook -> OrderBook
+updateOrderBook (Just (P (PrivateMsg _ _ (D d@(DepthMsg _ _ _ _ _ _ _ _ _ _))))) ob | type_str d == Bid = 
+	ob {bids = insertWith comp update insert (d_price_int d, total_volume_int d) (bids ob)}
+	where
+	comp p1 p2 = invertOrdering $ compare p1 p2
+	update (p2, v2) = let new_volume = v2 + (volume_int d) 
+						in
+						if new_volume <= 0 then [] else [(p2, new_volume)]
+	insert (p, v) = if v <= 0 then [] else [(p, v)]
+updateOrderBook (Just (P (PrivateMsg _ _ (D d@(DepthMsg _ _ _ _ _ _ _ _ _ _))))) ob | type_str d == Ask = 
+	ob {asks = insertWith comp update insert (d_price_int d, total_volume_int d) (asks ob)}
+	where
+	comp p1 p2 = compare p1 p2
+	update (p2, v2) = let new_volume = v2 + (volume_int d) 
+						in
+						if new_volume <= 0 then [] else [(p2, new_volume)] 
+	insert (p, v) = if v <= 0 then [] else [(p, v)]
+
+updateOrderBook _ ob = ob
+
+invertOrdering :: Ordering -> Ordering
+invertOrdering LT = GT
+invertOrdering EQ = EQ
+invertOrdering GT = LT
