@@ -286,20 +286,21 @@ updateOrderBook :: Maybe GoxMessage -> OrderBook -> OrderBook
 updateOrderBook (Just (P (PrivateMsg _ _ (D d@(DepthMsg _ _ _ _ _ _ _ _ _ _))))) ob | type_str d == Bid = 
 	ob {bids = insertWith comp update insert (d_price_int d, total_volume_int d) (bids ob)}
 	where
-	comp p1 p2 = invertOrdering $ compare p1 p2
-	update (p2, v2) = let new_volume = v2 + (volume_int d) 
-						in
-						if new_volume <= 0 then [] else [(p2, new_volume)]
-	insert (p, v) = if v <= 0 then [] else [(p, v)]
+		comp p1 p2 = invertOrdering $ compare p1 p2
+		update (p, _) | volume_int d == 0 = [(p, total_volume_int d)]
+		update (p, v) | otherwise = let new_volume = v + (volume_int d) 
+										in
+										if new_volume == 0 then [] else [(p, new_volume)]
+		insert (p, v) = if v <= 0 then [] else [(p, v)]
 updateOrderBook (Just (P (PrivateMsg _ _ (D d@(DepthMsg _ _ _ _ _ _ _ _ _ _))))) ob | type_str d == Ask = 
 	ob {asks = insertWith comp update insert (d_price_int d, total_volume_int d) (asks ob)}
 	where
-	comp p1 p2 = compare p1 p2
-	update (p2, v2) = let new_volume = v2 + (volume_int d) 
-						in
-						if new_volume <= 0 then [] else [(p2, new_volume)] 
-	insert (p, v) = if v <= 0 then [] else [(p, v)]
-
+		comp p1 p2 = compare p1 p2
+		update (p, _) | volume_int d == 0 = [(p, total_volume_int d)]
+		update (p, v) | otherwise = let new_volume = v + (volume_int d) 
+										in
+										if new_volume == 0 then [] else [(p, new_volume)] 
+		insert (p, v) = if v <= 0 then [] else [(p, v)]
 updateOrderBook _ ob = ob
 
 invertOrdering :: Ordering -> Ordering
