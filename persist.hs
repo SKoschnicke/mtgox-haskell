@@ -19,6 +19,7 @@ create table if not exists tick (
 	book varchar(255) not null,
 	currency varchar(3) not null,
 	value double, 
+	volume double, 
 	total_volume double, 
 	value_type ENUM('ask', 'bid') 
 )
@@ -29,12 +30,12 @@ insert conn ctx = ticker ctx >>= persist conn
 
 persist :: MySQL.Connection -> Maybe GoxMessage -> IO ()
 persist conn (Just (P (PrivateMsg _ _ (D d@(DepthMsg _ _ _ _ _ _ _ _ _ _))))) = db_insert vals conn >>= putStr . show
-	where vals = [show $ now d, d_item d, d_currency d, show $ d_price_int d, show $ total_volume_int d, show $ type_str d] 
+	where vals = [show $ now d, d_item d, d_currency d, show $ d_price_int d, show $ volume_int d, show $ total_volume_int d, show $ type_str d] 
 persist _ m = putStr $ show m
 
 db_insert :: [String] -> MySQL.Connection -> IO Int64
 db_insert vals conn = MySQL.execute conn query vals
-	where query = "insert into tick (timestamp, book, currency, value, total_volume, value_type) values (?,?,?,?,?,?)" :: MySQL.Query
+	where query = "insert into tick (timestamp, book, currency, value, volume, total_volume, value_type) values (?,?,?,?,?,?,?)" :: MySQL.Query
 
 db_connect :: IO MySQL.Connection
 db_connect = MySQL.connect MySQL.defaultConnectInfo { MySQL.connectDatabase = "mtgox" }
