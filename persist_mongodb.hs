@@ -11,8 +11,20 @@ persist :: Pipe -> Maybe GoxMessage -> IO ()
 persist pipe (Just (P (PrivateMsg _ _ (D d@(DepthMsg _ _ _ _ _ _ _ _ _ _))))) = insert' pipe d >>= putStr . show 
 persist _ m = putStr $ show m
 
-insert' pipe d = access pipe master "mtgox" (insertDepth d) >>= putStr . show
-	where insertDepth d = insert "depth" ["timestamp" =: (now d), "book" =: (d_item d), "currency" =: (d_currency d), "value" =: (d_price_int d), "volume" =: (volume_int d), "total_volume" =: (total_volume_int d), "value_type" =: (show $ type_str d)]
+insert' :: Pipe -> DepthMsg -> IO ()
+insert' pipe m = access pipe master "mtgox" (insertDepth m) >>= putStr . show
+	where insertDepth d = insert "depth" [
+                  "currency" =: d_currency d
+                , "item" =: d_item d
+                , "now" =: now d
+                , "price" =: d_price d
+                , "price_int" =: d_price_int d
+                , "total_volume_int" =: total_volume_int d
+                , "type" =: d_type d
+                , "type_str" =: (show $ type_str d)
+                , "volume" =: volume_int d
+                , "volume_int" =: volume_int d
+                ] 
 
 mongo_conn :: Pipe -> Context -> IO ()
 mongo_conn pipe ctx = do m <- ticker ctx
