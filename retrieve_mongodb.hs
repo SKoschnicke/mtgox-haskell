@@ -11,6 +11,7 @@ depth = rest =<< find (select [] "depth") {sort = ["timestamp" =: 1]}
 printDocs :: MonadIO m => String -> [Document] -> m ()
 printDocs title docs = liftIO $ putStrLn title >> mapM_ (print . toDepth) docs
 
+-- probably this can be done more elegant, with bson-mapping or generic
 toDepth :: Document -> DepthMsg
 toDepth d = DepthMsg 
                 (typed $ valueAt "currency" d) 
