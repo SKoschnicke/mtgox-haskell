@@ -26,7 +26,7 @@ orderBook ob ctx = do
 
 main :: IO ()
 main = let go ob ctx = do
-						ob' <- orderBook ob ctx  
+						ob' <- orderBook ob ctx 
 						print ob'
 						go ob' ctx
 		in
