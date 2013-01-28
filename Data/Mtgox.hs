@@ -25,9 +25,9 @@ TradeType (..),
 )
 where
 
-import Data.Aeson
 import Control.Applicative
 import Control.Monad
+import Data.Aeson
 
 data GoxMessage = S SubscribeMsg | US UnsubscribeMsg | Rem RemarkMsg | P PrivateMsg | R ResultMsg deriving (Show, Eq)
 

@@ -1,19 +1,13 @@
 module Enumerator.Live where
 
-import Data.Iteratee hiding (takeWhile)
--- import Control.Monad.Trans
-import Network.TLS
---import Network.Socket (PortNumber)
-
 import qualified Data.ByteString.Lazy.Char8 as LC
 import qualified Data.ByteString.Char8 as BC
-
-import System.Certificate.X509
-
-import Data.IORef
-import Network.Socket (PortNumber)
-
 import Data.Aeson (decode)
+import Data.IORef
+import Data.Iteratee hiding (takeWhile)
+import Network.Socket (PortNumber)
+import Network.TLS
+import System.Certificate.X509
 
 import Connection.TLS
 import Data.Mtgox

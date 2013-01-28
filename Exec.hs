@@ -1,8 +1,7 @@
 module Exec where
 
-import Data.Iteratee
-
 import Control.Monad.Error
+import Data.Iteratee
 
 import Enumerator.Live
 import Enumerator.RetrieveDepthMsg
