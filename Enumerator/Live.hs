@@ -2,7 +2,6 @@ module Enumerator.Live where
 
 import qualified Data.ByteString.Lazy.Char8 as LC
 import qualified Data.ByteString.Char8 as BC
-import Data.Aeson (decode)
 import Data.IORef
 import Data.Iteratee hiding (takeWhile)
 import Network.Socket (PortNumber)
@@ -10,7 +9,6 @@ import Network.TLS
 import System.Certificate.X509
 
 import Connection.TLS
-import Data.Mtgox
 
 apiHost :: String
 apiHost = "socketio.mtgox.com"
@@ -20,7 +18,7 @@ apiPort = 443
 
 -- | Enumerate the live MtGox stream
 -- enumLive :: MonadIO m => Enumerator [Maybe GoxMessage] m a
-enumLive :: Enumerator [Maybe GoxMessage] IO a
+enumLive :: Enumerator [LC.ByteString] IO a
 enumLive iter = do 
 	certStore <- getSystemCertificateStore 
 	sStorage <- newIORef undefined
@@ -42,7 +40,7 @@ enumLive iter = do
 			enumContext ctx iter
 
 -- enumContext :: MonadIO m => Context -> Enumerator [Maybe GoxMessage] m a
-enumContext :: Context -> Enumerator [Maybe GoxMessage] IO a
+enumContext :: Context -> Enumerator [LC.ByteString] IO a
 enumContext ctx iter = runIter iter idoneM onCont
     where onCont k e = do d <- recvData ctx
                           let (h,msg) = splitHeader d
@@ -50,7 +48,7 @@ enumContext ctx iter = runIter iter idoneM onCont
                             -- send heartbeats back.
                             "2::" 	-> (sendData ctx $ frame $ LC.pack "2::") >> onCont k e
                             -- collect JSON messages.
-                            "4::" 	-> enumContext ctx $ k (Chunk [(decode $ LC.fromChunks [BC.drop 7 msg] :: Maybe GoxMessage)])
+                            "4::" 	-> enumContext ctx $ k (Chunk [LC.fromChunks [BC.drop 7 msg]])
                             -- ignore the rest.
                             _       -> onCont k e
             
