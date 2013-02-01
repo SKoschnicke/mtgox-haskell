@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings, ExtendedDefaultRules #-}
-module Iteratee.PersistDepthMsg where
+module Iteratee.PersistDepthMsg (
+    iterPersistDepthMsg
+    ) where
 
 import Control.Monad.Trans
 import Database.MongoDB 

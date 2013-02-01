@@ -1,4 +1,7 @@
-module Iteratee.GoxParser where
+module Iteratee.GoxParser (
+      eneeDecode
+    , eneeParse
+    ) where
 
 import Data.ByteString.Lazy as L
 import Data.Aeson

@@ -1,4 +1,6 @@
-module Iteratee.ShowOrderBook where
+module Iteratee.ShowOrderBook (
+    iterShowOrderBook
+    ) where
 
 import Control.Monad.Trans
 import Data.Iteratee as I hiding (take, length)

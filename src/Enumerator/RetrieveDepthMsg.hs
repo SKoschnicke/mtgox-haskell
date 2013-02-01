@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings, ExtendedDefaultRules #-}
-module Enumerator.RetrieveDepthMsg where
+module Enumerator.RetrieveDepthMsg (
+    enumDB
+    ) where
 
 import Control.Monad.Error
 import Database.MongoDB

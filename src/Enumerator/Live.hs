@@ -1,4 +1,6 @@
-module Enumerator.Live where
+module Enumerator.Live (
+    enumLive
+    ) where
 
 import qualified Data.ByteString.Lazy.Char8 as LC
 import qualified Data.ByteString.Char8 as BC
