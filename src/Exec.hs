@@ -37,7 +37,7 @@ bufsize :: Int
 bufsize = 1024
 
 file :: FilePath
-file = "etc/DepthMsg.json"
+file = "../etc/DepthMsg.json"
 
 exec4 :: IO ()
 exec4 = (enumFile bufsize file) iter >>= run
