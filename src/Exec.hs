@@ -1,16 +1,16 @@
 module Exec where
 
-import Control.Monad.Error
-import Data.Iteratee as I
-import Data.Iteratee.IO
+import Control.Monad.Error (runErrorT)
+import Data.Iteratee (run, joinI, (>>>))
+import Data.Iteratee.IO (enumFile)
 
-import Enumerator.Live
-import Enumerator.RetrieveDepthMsg
+import Enumerator.Live (enumLive)
+import Enumerator.RetrieveDepthMsg (enumDB)
 
-import Iteratee.ShowGoxMessage
-import Iteratee.ShowOrderBook
-import Iteratee.PersistDepthMsg
-import Iteratee.GoxParser
+import Iteratee.ShowGoxMessage (iterShowGoxMessage)
+import Iteratee.ShowOrderBook (iterShowOrderBook)
+import Iteratee.PersistDepthMsg (iterPersistDepthMsg)
+import Iteratee.GoxParser (eneeDecode, eneeParse)
 
 {-
 TODOs: - maybe use ErrorT as well in enumLive for error handling
