@@ -2,25 +2,28 @@
 module Enumerator.RetrieveDepthMsg where
 
 import Control.Monad.Error
-import Database.MongoDB 
+import Database.MongoDB
 
 import Data.Iteratee 
 import Data.Mtgox
 
 -- | Enumerate mongodb 
 enumDB :: Enumerator [Maybe GoxMessage] (ErrorT IOError IO) a
-enumDB iter = Database.MongoDB.connect (host "127.0.0.1") >>= go iter         
-    where go iter pipe = do cur <- access pipe master "mtgox" depth 
-                            case cur of
-                               Left l -> undefined -- TODO: proper error handling 
+enumDB iter = connect (host "127.0.0.1") >>= go iter         
+    where go iter pipe = do e <- access pipe master "mtgox" depth 
+                            case e of
+                               Left l -> error $ show l
                                Right r -> enumMongoDB r pipe iter 
 
 enumMongoDB :: Cursor -> Pipe -> Enumerator [Maybe GoxMessage] (ErrorT IOError IO) a
-enumMongoDB cur pipe iter = runIter iter idoneM onCont
-    where onCont k e = do docs <- access pipe master "mtgox" (nextN 5 cur >>= toDepthMsgs) 
-                          case docs of 
-                             Left l -> undefined -- TODO: proper error handling 
-                             Right r -> enumMongoDB cur pipe $ k (Chunk (r :: [Maybe GoxMessage]))
+enumMongoDB cur pipe iter = runIter iter onDone onCont
+    where onCont k ex = do e <- access pipe master "mtgox" (nextN 5 cur >>= toDepthMsgs) 
+                           case e of 
+                              Left l -> error $ show l  
+                              Right r -> if null r 
+                                            then liftIO (close pipe) >> icontM k ex
+                                            else enumMongoDB cur pipe $ k (Chunk (r :: [Maybe GoxMessage]))
+          onDone a s = liftIO (close pipe) >> idoneM a s
 
 depth :: Action (ErrorT IOError IO) Cursor
 depth = find (select [] "depth") {sort = ["timestamp" =: 1]}
@@ -47,4 +50,4 @@ wrap :: DepthMsg -> Maybe GoxMessage
 wrap m = Just . P $ PrivateMsg "" "" (D m)
 
 toTradeType :: String -> TradeType
-toTradeType s = if s == "bid" then Bid else Ask 
+toTradeType s = if s == "Bid" then Bid else Ask 
