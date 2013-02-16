@@ -8,12 +8,12 @@ import Database.MongoDB
 import Data.Mtgox
 
 persistDB :: Proxy p => () -> Consumer p (Maybe GoxMessage) IO r
-persistDB () = runIdentityP $ lift pipe >>= forever . go
+persistDB () = runIdentityP $ lift pipe' >>= forever . go
     where go p = do m <- request () 
                     lift $ persist p m
 
-pipe :: IO Database.MongoDB.Pipe
-pipe = runIOE $ Database.MongoDB.connect (host "127.0.0.1") 
+pipe' :: IO Database.MongoDB.Pipe
+pipe' = runIOE $ Database.MongoDB.connect (host "127.0.0.1") 
 
 persist :: Database.MongoDB.Pipe -> Maybe GoxMessage -> IO ()
 persist pipe (Just (P (PrivateMsg _ _ (D d@(DepthMsg _ _ _ _ _ _ _ _ _ _))))) = insert' pipe d >>= putStr . show 

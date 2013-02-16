@@ -17,8 +17,6 @@ import Data.IORef
 import Network.TLS
 import Network.TLS.Extra
 import qualified Control.Exception as E
-import Control.Monad.Trans
-import qualified Control.Monad.CatchIO as M
 import System.IO
 
 import Control.Proxy

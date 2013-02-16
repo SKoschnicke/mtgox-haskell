@@ -1,7 +1,6 @@
 module Mtgox.Pipes.Producer.Live 
     where
 
-import Control.Monad.Trans
 import Control.Proxy
 import Control.Proxy.Safe
 import qualified Data.ByteString.Lazy.Char8 as LC

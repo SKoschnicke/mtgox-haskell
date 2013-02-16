@@ -2,10 +2,8 @@
 module Mtgox.Pipes.Producer.RetrieveDepthMsg
     where
 
-import Control.Monad.Trans.Control
 import Control.Monad.Error
 import Control.Proxy
-import Control.Proxy.Safe
 import Database.MongoDB
 
 import Data.Mtgox

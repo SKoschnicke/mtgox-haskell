@@ -6,7 +6,6 @@ import Control.Proxy.Safe
 import qualified Control.Proxy.Trans.State as S
 import qualified System.IO as IO
 
-import Data.Mtgox
 import Mtgox.Pipes.Consumer.ShowOrderBook 
 import Mtgox.Pipes.Consumer.PersistDepthMsg 
 import Mtgox.Pipes.Pipe.Parser

@@ -3,7 +3,6 @@ module Mtgox.Pipes.Pipe.Parser
 
 import Data.Aeson (decode)
 import qualified Data.ByteString.Lazy.Char8 as LC
-import qualified Data.ByteString.Char8 as BC
 import Control.Proxy
 
 import Data.Mtgox
