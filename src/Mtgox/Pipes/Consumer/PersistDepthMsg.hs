@@ -1,26 +1,25 @@
 {-# LANGUAGE OverloadedStrings, ExtendedDefaultRules #-}
-module Iteratee.PersistDepthMsg (
-    iterPersistDepthMsg
-    ) where
+module Iteratee.PersistDepthMsg 
+    where
 
-import Control.Monad.Trans
+import Control.Proxy
 import Database.MongoDB 
-import Data.Iteratee as I 
 
 import Data.Mtgox
 
-iterPersistDepthMsg :: Iteratee [Maybe GoxMessage] IO ()
-iterPersistDepthMsg = do p <- liftIO $ pipe 
-                         I.mapM_ (persist p)
+persistDB :: Proxy p => () -> Consumer p (Maybe GoxMessage) IO r
+persistDB () = runIdentityP $ lift pipe >>= forever . go
+    where go p = do m <- request () 
+                    lift $ persist p m
 
-pipe :: IO Pipe
+pipe :: IO Database.MongoDB.Pipe
 pipe = runIOE $ Database.MongoDB.connect (host "127.0.0.1") 
 
-persist :: Pipe -> Maybe GoxMessage -> IO ()
+persist :: Database.MongoDB.Pipe -> Maybe GoxMessage -> IO ()
 persist pipe (Just (P (PrivateMsg _ _ (D d@(DepthMsg _ _ _ _ _ _ _ _ _ _))))) = insert' pipe d >>= putStr . show 
 persist _ m = putStr $ show m
 
-insert' :: Pipe -> DepthMsg -> IO ()
+insert' :: Database.MongoDB.Pipe -> DepthMsg -> IO ()
 insert' pipe m = access pipe master "mtgox" (insertDepth m) >>= putStr . show
 	where insertDepth d = insert "depth" [
                   "currency" =: d_currency d
