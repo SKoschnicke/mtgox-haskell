@@ -1,16 +1,14 @@
 {-# LANGUAGE OverloadedStrings, ExtendedDefaultRules #-}
-module Enumerator.RetrieveDepthMsg
+module Mtgox.Pipes.Producer.RetrieveDepthMsg
     where
 
 import Control.Monad.Trans.Control
 import Control.Monad.Error
-import Database.MongoDB
-
-import Data.Iteratee 
-import Data.Mtgox
-
 import Control.Proxy
 import Control.Proxy.Safe
+import Database.MongoDB
+
+import Data.Mtgox
 
 producerDB :: Proxy p => () -> Producer p (Maybe GoxMessage) (ErrorT IOError IO) ()
 producerDB () = runIdentityP $ (lift $ connect (host "127.0.0.1")) >>= go
@@ -33,9 +31,6 @@ depth = find (select [] "depth") {sort = ["timestamp" =: 1]}
 toDepthMsgs :: MonadIO m => [Document] -> m [Maybe GoxMessage]
 toDepthMsgs docs = Prelude.mapM (return . wrap . toDepth) docs
 
-toDepthMsgs' :: MonadIO m => [Document] -> m [GoxMessage]
-toDepthMsgs' docs = Prelude.mapM (return . wrap' . toDepth) docs
-
 -- probably this can be done more elegant, with bson-mapping or generic
 toDepth :: Document -> DepthMsg
 toDepth d = DepthMsg 
@@ -52,10 +47,7 @@ toDepth d = DepthMsg
 
 -- FIXME: store entire PrivateMsg?
 wrap :: DepthMsg -> Maybe GoxMessage
-wrap = Just . wrap'
-
-wrap' :: DepthMsg -> GoxMessage
-wrap' m = P $ PrivateMsg "" "" (D m)
+wrap m = Just . P $ PrivateMsg "" "" (D m)
 
 toTradeType :: String -> TradeType
 toTradeType s = if s == "Bid" then Bid else Ask 

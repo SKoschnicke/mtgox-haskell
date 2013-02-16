@@ -1,58 +1,57 @@
 module Exec where
 
 import Control.Monad.Error (runErrorT)
-import Data.Iteratee (run, joinI, (>>>))
-import Data.Iteratee.IO (enumFile)
+import Control.Proxy
+import Control.Proxy.Safe
+import qualified Control.Proxy.Trans.State as S
+import qualified System.IO as IO
 
-import Enumerator.Live (enumLive)
-import Enumerator.RetrieveDepthMsg (enumDB)
+import Data.Mtgox
+import Mtgox.Pipes.Consumer.ShowOrderBook 
+import Mtgox.Pipes.Consumer.PersistDepthMsg 
+import Mtgox.Pipes.Pipe.Parser
+import Mtgox.Pipes.Producer.Live
+import Mtgox.Pipes.Producer.RetrieveDepthMsg 
 
-import Iteratee.ShowGoxMessage (iterShowGoxMessage)
-import Iteratee.ShowOrderBook (iterShowOrderBook)
-import Iteratee.PersistDepthMsg (iterPersistDepthMsg)
-import Iteratee.GoxParser (eneeDecode, eneeParse)
-
-{-
-TODOs: - maybe use ErrorT as well in enumLive for error handling
-       - get rid of Maybe in Maybe GoxMessage
-       - store full PrivateMsg, not only DepthMsg
-       - error handling is not yet fully implemented
--}
-
--- enumerate live stream
+-- live stream
 exec1 :: IO ()
-exec1 = enumLive iter >>= run
-    where iter = joinI $ eneeDecode iterShowGoxMessage
+exec1 = runSafeIO $ runProxy $ runEitherK $ 
+            producerLive >-> tryK parse' >-> tryK printD
 
-exec2 :: IO ()
-exec2 = enumLive iter >>= run >>= print
-    where iter = joinI $ eneeDecode iterShowOrderBook
+-- TODO: 
+-- exec2 :: IO ()
+-- exec2 = runSafeIO $ runProxy $ S.evalStateK (OrderBook [] []) $ runEitherK $ 
+--            producerLive >-> tryK parse' >-> tryK orderBookPrinter
 
 exec3 :: IO ()
-exec3 = enumLive iter >>= run
-    where iter = joinI $ eneeDecode iterPersistDepthMsg
+exec3 = runSafeIO $ runProxy $ runEitherK $ 
+            producerLive >-> tryK parse' >-> tryK persistDB
 
--- enumerate files
-bufsize :: Int
-bufsize = 1024
-
+-- read files
 file :: FilePath
 file = "../etc/DepthMsg.json"
 
 exec4 :: IO ()
-exec4 = (enumFile bufsize file) iter >>= run
-    where iter = joinI $ eneeParse iterShowGoxMessage 
+exec4 = IO.withFile file IO.ReadMode $ 
+            \h -> runProxy $ hGetLineS h >-> trans' >-> parse' >-> printD
 
-exec5 :: IO ()
-exec5 = enum iter >>= run
-    where enum = enumFile bufsize file >>> enumFile bufsize file
-          iter = joinI $ eneeParse iterShowGoxMessage 
+exec4a :: IO ()
+exec4a = IO.withFile file IO.ReadMode $ 
+            \h -> runProxy $ S.evalStateK (OrderBook [] []) $ 
+                    hGetLineS h >-> trans' >-> parse' >-> orderBookPrinter
 
--- enumerate database
+-- TODO
+-- exec5 :: IO ()
+-- exec5 = enum iter >>= run
+--     where enum = enumFile bufsize file >>> enumFile bufsize file
+--           iter = joinI $ eneeParse iterShowGoxMessage 
+
+-- read from database
 exec6 :: IO ()
 exec6 = runErrorT go >>= either print print
-    where go = enumDB iterShowGoxMessage >>= run
+	where go = runProxy $ producerDB >-> raise . printD
 
 exec7 :: IO ()
 exec7 = runErrorT go >>= either print print
-    where go = enumDB iterShowOrderBook >>= run
+	where go = runProxy $ S.evalStateK (OrderBook [] []) $ 
+                    producerDB >-> raise . orderBookPrinter

@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, ExtendedDefaultRules #-}
-module Iteratee.PersistDepthMsg 
+module Mtgox.Pipes.Consumer.PersistDepthMsg 
     where
 
 import Control.Proxy

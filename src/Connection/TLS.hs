@@ -17,7 +17,12 @@ import Data.IORef
 import Network.TLS
 import Network.TLS.Extra
 import qualified Control.Exception as E
+import Control.Monad.Trans
+import qualified Control.Monad.CatchIO as M
 import System.IO
+
+import Control.Proxy
+import qualified Control.Proxy.Safe as S
 
 ciphers :: [Cipher]
 ciphers =
@@ -34,8 +39,10 @@ instance SessionManager SessionRef where
     sessionResume (SessionRef ref) sid = readIORef ref >>= \(s,d) -> if s == sid then return (Just d) else return Nothing
     sessionInvalidate _ _ = return ()
 
-runTLS :: Params -> String -> PortNumber -> (Context -> IO a) -> IO a
-runTLS params hostname portNumber f = E.bracket (do
+-- runTLS :: Params -> String -> PortNumber -> (Context -> IO a) -> IO a
+runTLS :: Proxy p => Params -> HostName -> PortNumber -> (Context -> S.ExceptionP p a' a b' b S.SafeIO r) -> S.ExceptionP p a' a b' b S.SafeIO r
+
+runTLS params hostname portNumber f = S.bracket id (do
 	rng  <- RNG.makeSystem
 	he   <- getHostByName hostname
 	sock <- socket AF_INET Stream defaultProtocol

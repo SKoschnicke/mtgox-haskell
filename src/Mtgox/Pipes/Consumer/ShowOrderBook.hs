@@ -1,15 +1,12 @@
-module Iteratee.ShowOrderBook 
+module Mtgox.Pipes.Consumer.ShowOrderBook 
     where
 
 import Control.Monad.Trans
-import Data.Iteratee as I hiding (take, length)
+import Control.Proxy
+import qualified Control.Proxy.Trans.State as S
 import Text.PrettyPrint.Boxes
 
 import Data.Mtgox
-
-import Control.Proxy
-
-import qualified Control.Proxy.Trans.State as S
 
 orderBookPrinter :: (Proxy p) => () -> Consumer (S.StateP OrderBook p) (Maybe GoxMessage) IO r
 orderBookPrinter () = forever $ do
@@ -18,20 +15,6 @@ orderBookPrinter () = forever $ do
     let ob' = updateOrderBook msg ob
     lift $ print ob'
     S.put ob'
-
-increment2 :: (Proxy p) => () -> Consumer (S.StateP Int p) Int IO r
-increment2 () = forever $ do
-    nOurs   <- S.get
-    nTheirs <- request ()
-    lift $ print (nTheirs, nOurs)
-    S.put (nOurs + 2)
-
-
-iterShowOrderBook :: MonadIO m => Iteratee [Maybe GoxMessage] m OrderBook
-iterShowOrderBook = I.foldM f (OrderBook [] []) 
-     where f ob msg = do let ob' = updateOrderBook msg ob
-                         liftIO $ print ob'
-                         return ob'
 
 -- | Inserts (key, value) pairs into an ordered list.
 insertWith :: (k -> k -> Ordering) 		-- ^ comparision function.

@@ -1,20 +1,17 @@
-module Enumerator.Live 
+module Mtgox.Pipes.Producer.Live 
     where
 
+import Control.Monad.Trans
+import Control.Proxy
+import Control.Proxy.Safe
 import qualified Data.ByteString.Lazy.Char8 as LC
 import qualified Data.ByteString.Char8 as BC
 import Data.IORef
-import Data.Iteratee hiding (takeWhile)
 import Network.Socket (PortNumber)
 import Network.TLS
 import System.Certificate.X509
 
-import Control.Monad.Trans
-
 import Connection.TLS
-
-import Control.Proxy
-import Control.Proxy.Safe
 
 apiHost :: String
 apiHost = "socketio.mtgox.com"
