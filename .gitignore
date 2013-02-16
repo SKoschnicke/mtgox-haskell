@@ -1,0 +1,9 @@
+*~
+*.o
+*.hi
+*.hp
+*.aux
+*.prof
+*.ps
+*.swp
+dist/
