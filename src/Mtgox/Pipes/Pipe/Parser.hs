@@ -7,8 +7,8 @@ import Control.Proxy
 
 import Data.Mtgox
 
-trans' :: (Proxy p) => () -> Pipe p String LC.ByteString IO r
+trans' :: (Monad m, Proxy p) => () -> Pipe p String LC.ByteString m r
 trans' () = runIdentityP $ forever $ (request () >>= respond . LC.pack) 
 
-parse' :: (Proxy p) => () -> Pipe p LC.ByteString (Maybe GoxMessage) IO r
+parse' :: (Monad m, Proxy p) => () -> Pipe p LC.ByteString (Maybe GoxMessage) m r
 parse' () = runIdentityP $ forever $ request () >>= respond . decode
