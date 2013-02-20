@@ -9,18 +9,22 @@ import System.IO
 import Mtgox.Pipes.Consumer.ShowOrderBook 
 import Mtgox.Pipes.Consumer.PersistDepthMsg 
 import Mtgox.Pipes.Pipe.Parser
+import Mtgox.Pipes.Producer.File
 import Mtgox.Pipes.Producer.Live
 import Mtgox.Pipes.Producer.RetrieveDepthMsg 
+
+import Data.ByteString.Lazy.Char8 
 
 -- live stream
 exec1 :: IO ()
 exec1 = runSafeIO $ runProxy $ runEitherK $ 
-            producerLive >-> tryK parse' >-> tryK printD
+            producerLive >-> tryK (parse' >-> printD)
 
--- TODO: 
+-- TODO:
 -- exec2 :: IO ()
--- exec2 = runSafeIO $ runProxy $ evalStateK (OrderBook [] []) $ runEitherK $ 
---            producerLive >-> tryK parse' >-> tryK orderBookPrinter
+-- exec2 = runSafeIO $ runProxy $ evalStateK (OrderBook [] []) $ runEitherK chain
+-- chain :: (Proxy p, CheckP (StateP OrderBook p)) => () -> EitherP SomeException (StateP OrderBook p) a' a () C SafeIO r
+-- chain = producerLive >-> tryK (parse' >-> orderBookPrinter)
 
 exec3 :: IO ()
 exec3 = runSafeIO $ runProxy $ runEitherK $ 
@@ -31,18 +35,12 @@ file :: FilePath
 file = "../etc/DepthMsg.json"
 
 exec4 :: IO ()
-exec4 = withFile file ReadMode $ 
-            \h -> runProxy $ hGetLineS h >-> trans' >-> parse' >-> printD
-
-exec4a :: IO ()
-exec4a = withFile file ReadMode $ 
-            \h -> runProxy $ evalStateK (OrderBook [] []) $ 
-                    hGetLineS h >-> trans' >-> parse' >-> orderBookPrinter
+exec4 = runSafeIO $ runProxy $ runEitherK $ 
+			readFileS file >-> tryK (trans' >-> parse' >-> printD)
 
 exec5 :: IO ()
-exec5 = withFile file ReadMode $ \h1 -> 
-		withFile file ReadMode $ \h2 -> 
-        runProxy $ (hGetLineS h1 >=> hGetLineS h2) >-> trans' >-> parse' >-> printD
+exec5 = runSafeIO $ runProxy $ runEitherK $ 
+			(readFileS file >=> readFileS file) >-> tryK (trans' >-> parse' >-> printD)
 
 -- read database
 exec6 :: IO ()
