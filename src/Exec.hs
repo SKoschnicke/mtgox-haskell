@@ -18,7 +18,7 @@ import Data.ByteString.Lazy.Char8
 -- live stream
 exec1 :: IO ()
 exec1 = runSafeIO $ runProxy $ runEitherK $ 
-            producerLive >-> tryK (parse' >-> printD)
+	producerLive >-> tryK (parse' >-> printD)
 
 -- TODO:
 -- exec2 :: IO ()
@@ -28,7 +28,7 @@ exec1 = runSafeIO $ runProxy $ runEitherK $
 
 exec3 :: IO ()
 exec3 = runSafeIO $ runProxy $ runEitherK $ 
-            producerLive >-> tryK parse' >-> tryK persistDB
+	producerLive >-> tryK parse' >-> tryK persistDB
 
 -- read files
 file :: FilePath
@@ -36,18 +36,18 @@ file = "../etc/DepthMsg.json"
 
 exec4 :: IO ()
 exec4 = runSafeIO $ runProxy $ runEitherK $ 
-			readFileS file >-> tryK (trans' >-> parse' >-> printD)
+	readFileS file >-> tryK (trans' >-> parse' >-> printD)
 
 exec5 :: IO ()
 exec5 = runSafeIO $ runProxy $ runEitherK $ 
-			(readFileS file >=> readFileS file) >-> tryK (trans' >-> parse' >-> printD)
+	(readFileS file >=> readFileS file) >-> tryK (trans' >-> parse' >-> printD)
 
 -- read database
 exec6 :: IO ()
 exec6 = runErrorT go >>= either print print
-	where go = runProxy $ producerDB >-> raise . printD
+    where go = runProxy $ producerDB >-> raise . printD
 
 exec7 :: IO ()
 exec7 = runErrorT go >>= either print print
-	where go = runProxy $ evalStateK (OrderBook [] []) $ 
-                    producerDB >-> raise . orderBookPrinter
+    where go = runProxy $ evalStateK (OrderBook [] []) $ 
+				producerDB >-> raise . orderBookPrinter
