@@ -39,11 +39,10 @@ exec4a = IO.withFile file IO.ReadMode $
             \h -> runProxy $ S.evalStateK (OrderBook [] []) $ 
                     hGetLineS h >-> trans' >-> parse' >-> orderBookPrinter
 
--- TODO
--- exec5 :: IO ()
--- exec5 = enum iter >>= run
---     where enum = enumFile bufsize file >>> enumFile bufsize file
---           iter = joinI $ eneeParse iterShowGoxMessage 
+exec5 :: IO ()
+exec5 = IO.withFile file IO.ReadMode $ \h1 -> 
+		IO.withFile file IO.ReadMode $ \h2 -> 
+        runProxy $ (hGetLineS h1 >=> hGetLineS h2) >-> trans' >-> parse' >-> printD
 
 -- read from database
 exec6 :: IO ()
