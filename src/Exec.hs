@@ -1,10 +1,10 @@
 module Exec where
 
-import Control.Monad.Error (runErrorT)
+import Control.Monad.Error
 import Control.Proxy
 import Control.Proxy.Safe
-import qualified Control.Proxy.Trans.State as S
-import qualified System.IO as IO
+import Control.Proxy.Trans.State
+import System.IO
 
 import Mtgox.Pipes.Consumer.ShowOrderBook 
 import Mtgox.Pipes.Consumer.PersistDepthMsg 
@@ -19,7 +19,7 @@ exec1 = runSafeIO $ runProxy $ runEitherK $
 
 -- TODO: 
 -- exec2 :: IO ()
--- exec2 = runSafeIO $ runProxy $ S.evalStateK (OrderBook [] []) $ runEitherK $ 
+-- exec2 = runSafeIO $ runProxy $ evalStateK (OrderBook [] []) $ runEitherK $ 
 --            producerLive >-> tryK parse' >-> tryK orderBookPrinter
 
 exec3 :: IO ()
@@ -31,25 +31,25 @@ file :: FilePath
 file = "../etc/DepthMsg.json"
 
 exec4 :: IO ()
-exec4 = IO.withFile file IO.ReadMode $ 
+exec4 = withFile file ReadMode $ 
             \h -> runProxy $ hGetLineS h >-> trans' >-> parse' >-> printD
 
 exec4a :: IO ()
-exec4a = IO.withFile file IO.ReadMode $ 
-            \h -> runProxy $ S.evalStateK (OrderBook [] []) $ 
+exec4a = withFile file ReadMode $ 
+            \h -> runProxy $ evalStateK (OrderBook [] []) $ 
                     hGetLineS h >-> trans' >-> parse' >-> orderBookPrinter
 
 exec5 :: IO ()
-exec5 = IO.withFile file IO.ReadMode $ \h1 -> 
-		IO.withFile file IO.ReadMode $ \h2 -> 
+exec5 = withFile file ReadMode $ \h1 -> 
+		withFile file ReadMode $ \h2 -> 
         runProxy $ (hGetLineS h1 >=> hGetLineS h2) >-> trans' >-> parse' >-> printD
 
--- read from database
+-- read database
 exec6 :: IO ()
 exec6 = runErrorT go >>= either print print
 	where go = runProxy $ producerDB >-> raise . printD
 
 exec7 :: IO ()
 exec7 = runErrorT go >>= either print print
-	where go = runProxy $ S.evalStateK (OrderBook [] []) $ 
+	where go = runProxy $ evalStateK (OrderBook [] []) $ 
                     producerDB >-> raise . orderBookPrinter
