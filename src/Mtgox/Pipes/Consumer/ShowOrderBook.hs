@@ -3,12 +3,13 @@ module Mtgox.Pipes.Consumer.ShowOrderBook
 
 import Control.Monad.Trans
 import Control.Proxy
+import Control.Proxy.Safe hiding (left)
 import qualified Control.Proxy.Trans.State as S
 import Text.PrettyPrint.Boxes
 
 import Data.Mtgox
 
-orderBookPrinter :: (Proxy p) => () -> Consumer (S.StateP OrderBook p) (Maybe GoxMessage) IO r
+orderBookPrinter :: (CheckP p) => () -> Consumer (S.StateP OrderBook p) (Maybe GoxMessage) IO r
 orderBookPrinter () = forever $ do
     ob <- S.get
     msg <- request ()

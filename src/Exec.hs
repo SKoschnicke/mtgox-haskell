@@ -4,7 +4,6 @@ import Control.Monad.Error
 import Control.Proxy
 import Control.Proxy.Safe
 import Control.Proxy.Trans.State
-import System.IO
 
 import Mtgox.Pipes.Consumer.ShowOrderBook 
 import Mtgox.Pipes.Consumer.PersistDepthMsg 
@@ -13,18 +12,15 @@ import Mtgox.Pipes.Producer.File
 import Mtgox.Pipes.Producer.Live
 import Mtgox.Pipes.Producer.RetrieveDepthMsg 
 
-import Data.ByteString.Lazy.Char8 
-
 -- live stream
 exec1 :: IO ()
 exec1 = runSafeIO $ runProxy $ runEitherK $ 
     producerLive >-> tryK (parse' >-> printD)
 
--- TODO:
--- exec2 :: IO ()
--- exec2 = runSafeIO $ runProxy $ evalStateK (OrderBook [] []) $ runEitherK chain
--- chain :: (Proxy p, CheckP (StateP OrderBook p)) => () -> EitherP SomeException (StateP OrderBook p) a' a () C SafeIO r
--- chain = producerLive >-> tryK (parse' >-> orderBookPrinter)
+exec2 :: IO ()
+exec2 = runSafeIO $ runProxy $ runEitherK $ evalStateK (OrderBook [] []) chain
+    where chain :: CheckP p => () -> StateP OrderBook (EitherP SomeException p) a' a () C SafeIO r
+          chain = mapP producerLive >-> \() -> hoistP try $ (parse' >-> orderBookPrinter) ()
 
 exec3 :: IO ()
 exec3 = runSafeIO $ runProxy $ runEitherK $ 

@@ -19,7 +19,7 @@ apiPort :: PortNumber
 apiPort = 443
 
 producerLive
-  :: Proxy p =>
+  :: CheckP p =>
      () -> EitherP SomeException p a' a b' LC.ByteString SafeIO b
 producerLive () = do
     certStore <- tryIO $ getSystemCertificateStore 
