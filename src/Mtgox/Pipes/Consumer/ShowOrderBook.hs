@@ -12,6 +12,7 @@ import Text.PrettyPrint.Boxes
 
 import Data.Mtgox
 
+-- | Consumer that creates an order book and prints it to stdout
 orderBookPrinter :: (CheckP p) => () -> Consumer (S.StateP OrderBook p) (Maybe GoxMessage) IO r
 orderBookPrinter () = forever $ do
     ob <- S.get

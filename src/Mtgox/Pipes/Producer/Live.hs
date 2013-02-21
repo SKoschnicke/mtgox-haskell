@@ -20,17 +20,14 @@ apiHost = "socketio.mtgox.com"
 apiPort :: PortNumber
 apiPort = 443
 
-producerLive
-  :: CheckP p =>
-     () -> EitherP SomeException p a' a b' LC.ByteString SafeIO b
+-- | Producer of bytestrings from live MtGox feed
+producerLive :: CheckP p => () -> EitherP SomeException p a' a b' LC.ByteString SafeIO b
 producerLive () = do
     certStore <- tryIO $ getSystemCertificateStore 
     sStorage <- tryIO $ newIORef undefined
     runTLS (getDefaultParams certStore sStorage Nothing) apiHost apiPort worker
 
-worker
-  :: Proxy p =>
-     Context -> EitherP SomeException p a' a b' LC.ByteString SafeIO b
+worker :: Proxy p => Context -> EitherP SomeException p a' a b' LC.ByteString SafeIO b
 worker ctx = do
             tryIO $ handshake ctx
             tryIO $ sendData ctx $ LC.pack $ "GET /socket.io/1/ HTTP/1.1\r\n\r\n"

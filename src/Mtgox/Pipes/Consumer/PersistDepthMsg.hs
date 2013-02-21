@@ -9,6 +9,7 @@ import Database.MongoDB
 
 import Data.Mtgox
 
+-- | Consumer that stores messages in a local mongodb
 persistDB :: Proxy p => () -> Consumer p (Maybe GoxMessage) IO r
 persistDB () = runIdentityP $ lift pipe' >>= forever . go
     where go p = do m <- request () 

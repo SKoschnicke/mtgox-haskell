@@ -10,6 +10,7 @@ import Database.MongoDB
 
 import Data.Mtgox
 
+-- | Producer of MtGox messages by reading from a local mongodb
 producerDB :: Proxy p => () -> Producer p (Maybe GoxMessage) (ErrorT IOError IO) ()
 producerDB () = runIdentityP $ (lift $ connect (host "127.0.0.1")) >>= go
      where go pipe = do e <- lift $ access pipe master "mtgox" depth 
