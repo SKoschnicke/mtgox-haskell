@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings, ExtendedDefaultRules #-}
-module Mtgox.Pipes.Consumer.PersistDepthMsg 
+module Mtgox.Pipes.Consumer.PersistDepthMsg (
+    persistDB
+    )
     where
 
 import Control.Proxy
@@ -21,7 +23,7 @@ persist _ m = putStr $ show m
 
 insert' :: Database.MongoDB.Pipe -> DepthMsg -> IO ()
 insert' pipe m = access pipe master "mtgox" (insertDepth m) >>= putStr . show
-	where insertDepth d = insert "depth" [
+    where insertDepth d = insert "depth" [
                   "currency" =: d_currency d
                 , "item" =: d_item d
                 , "now" =: now d

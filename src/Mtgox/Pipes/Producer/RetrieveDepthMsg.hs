@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings, ExtendedDefaultRules #-}
-module Mtgox.Pipes.Producer.RetrieveDepthMsg
+module Mtgox.Pipes.Producer.RetrieveDepthMsg (
+    producerDB
+    )
     where
 
 import Control.Monad.Error

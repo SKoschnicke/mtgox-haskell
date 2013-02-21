@@ -15,16 +15,16 @@ import Mtgox.Pipes.Producer.RetrieveDepthMsg
 -- live stream
 exec1 :: IO ()
 exec1 = runSafeIO $ runProxy $ runEitherK $ 
-    producerLive >-> tryK (parse' >-> printD)
+    producerLive >-> tryK (parse >-> printD)
 
 exec2 :: IO ()
 exec2 = runSafeIO $ runProxy $ runEitherK $ evalStateK (OrderBook [] []) chain
     where chain :: CheckP p => () -> StateP OrderBook (EitherP SomeException p) a' a () C SafeIO r
-          chain = mapP producerLive >-> \() -> hoistP try $ (parse' >-> orderBookPrinter) ()
+          chain = mapP producerLive >-> \() -> hoistP try $ (parse >-> orderBookPrinter) ()
 
 exec3 :: IO ()
 exec3 = runSafeIO $ runProxy $ runEitherK $ 
-    producerLive >-> tryK parse' >-> tryK persistDB
+    producerLive >-> tryK (parse >-> persistDB)
 
 -- read files
 file :: FilePath
@@ -32,18 +32,17 @@ file = "../etc/DepthMsg.json"
 
 exec4 :: IO ()
 exec4 = runSafeIO $ runProxy $ runEitherK $ 
-    readFileS file >-> tryK (trans' >-> parse' >-> printD)
+    readFileS file >-> tryK (parse >-> printD)
 
 exec5 :: IO ()
 exec5 = runSafeIO $ runProxy $ runEitherK $ 
-    (readFileS file >=> readFileS file) >-> tryK (trans' >-> parse' >-> printD)
+    (readFileS file >=> readFileS file) >-> tryK (parse >-> printD)
 
 -- read database
 exec6 :: IO ()
 exec6 = runErrorT go >>= either print print
-    where go = runProxy $ producerDB >-> raise . printD
+    where go = runProxy $ producerDB >-> raiseK printD
 
 exec7 :: IO ()
 exec7 = runErrorT go >>= either print print
-    where go = runProxy $ evalStateK (OrderBook [] []) $ 
-                producerDB >-> raise . orderBookPrinter
+    where go = runProxy $ evalStateK (OrderBook [] []) $ producerDB >-> raiseK orderBookPrinter

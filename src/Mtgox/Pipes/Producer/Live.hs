@@ -1,4 +1,6 @@
-module Mtgox.Pipes.Producer.Live 
+module Mtgox.Pipes.Producer.Live (
+    producerLive
+    )
     where
 
 import Control.Proxy
