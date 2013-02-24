@@ -1,10 +1,9 @@
-module Mtgox.Pipes.Consumer.ShowOrderBook (
-      orderBookPrinter
+module Mtgox.Pipes.Consumer.OrderBook (
+      orderBook
     , OrderBook(..)
     )
     where
 
-import Control.Monad.Trans
 import Control.Proxy
 import Control.Proxy.Safe hiding (left)
 import qualified Control.Proxy.Trans.State as S
@@ -13,13 +12,13 @@ import Text.PrettyPrint.Boxes
 import Data.Mtgox
 
 -- | Consumer that creates an order book and prints it to stdout
-orderBookPrinter :: (CheckP p) => () -> Consumer (S.StateP OrderBook p) (Maybe GoxMessage) IO r
-orderBookPrinter () = forever $ do
+orderBook:: (CheckP p) => () -> Pipe (S.StateP OrderBook p) (Maybe GoxMessage) OrderBook IO r
+orderBook () = forever $ do
     ob <- S.get
     msg <- request ()
     let ob' = updateOrderBook msg ob
-    lift $ print ob'
     S.put ob'
+    respond ob'
 
 -- | Inserts (key, value) pairs into an ordered list.
 insertWith :: (k -> k -> Ordering)      -- ^ comparision function.
@@ -81,4 +80,3 @@ invertOrdering :: Ordering -> Ordering
 invertOrdering LT = GT
 invertOrdering EQ = EQ
 invertOrdering GT = LT
-
