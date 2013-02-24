@@ -28,7 +28,7 @@ exec1 = runSafeIO $ runProxy $ runEitherK $
 exec2 :: IO ()
 exec2 = runSafeIO $ runProxy $ runEitherK $ evalStateK (OrderBook [] []) chain
     where chain :: CheckP p => () -> StateP OrderBook (EitherP SomeException p) a' a () C SafeIO r
-          chain = mapP producerLive >-> \() -> hoistP try $ (parse >-> orderBookPrinter) ()
+          chain = mapP producerLive >-> hoistP try . (parse >-> orderBookPrinter)
 
 -- | Parse and store live feed in a local mongodb
 exec3 :: IO ()
