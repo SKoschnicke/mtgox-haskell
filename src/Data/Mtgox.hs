@@ -22,12 +22,16 @@ TickerPrice (..),
 TradeMsg (..),
 DepthMsg (..),
 TradeType (..),
+FullDepth (..),
+Depth (..),
 )
 where
 
 import Control.Applicative
 import Control.Monad
 import Data.Aeson
+import Data.Aeson.Types
+import qualified Data.Vector as V
 
 data GoxMessage = S SubscribeMsg | US UnsubscribeMsg | Rem RemarkMsg | P PrivateMsg | R ResultMsg deriving (Show, Eq)
 
@@ -187,3 +191,38 @@ data TradeType = Bid | Ask deriving (Show, Eq)
 instance FromJSON TradeType where
 	parseJSON (String s) = if s == "bid" then return Bid else return Ask 
 	parseJSON _ = mzero
+
+
+-- Depth struct used in the HTTP Api, https://mtgox.com/api/1/BTCUSD/fulldepth
+
+data FullDepth = FullDepth {
+      fulldepth_result :: Maybe String
+    , fulldepth_asks :: [Depth]
+    , fulldepth_bids :: [Depth]
+    } deriving (Show, Eq)
+
+data Depth = Depth {
+      depth_price :: Double
+    , depth_amount :: Double
+    , depth_price_int :: Integer
+    , depth_amount_int :: Integer
+    , depth_stamp :: String
+    } deriving (Show, Eq)
+
+instance FromJSON Depth where
+    parseJSON (Object o) = Depth <$> o .: "price"
+                                 <*> o .: "amount"
+                                 <*> (read <$> o .: "price_int")
+                                 <*> (read <$> o .: "amount_int")
+                                 <*> o .: "stamp"
+    parseJSON _ = mzero
+
+instance FromJSON FullDepth where
+    parseJSON (Object o) = do result <- o .: "result"
+                              ret <- o .: "return"
+                              asks <- get "asks" ret
+                              bids <- get "bids" ret
+                              return $ FullDepth result asks bids
+                           where get s o' = do Array a <- o' .:? s .!= (Array $ V.fromList [])
+                                               V.toList <$> V.mapM (parseJSON :: Value -> Parser Depth) a
+    parseJSON _ = mzero
