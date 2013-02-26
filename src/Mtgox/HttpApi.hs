@@ -23,7 +23,7 @@ apiPort :: PortNumber
 apiPort = 443
 
 fillOrderBook :: IO OrderBook
-fillOrderBook = do o <- producerHttp 
+fillOrderBook = do o <- fulldepth 
                    case o of
                        Nothing -> return $ OrderBook [] []
                        Just d -> let a = map extract $ fulldepth_asks d 
@@ -33,8 +33,8 @@ extract :: Depth -> (Integer, Integer)
 extract d = (depth_price_int d, depth_amount_int d)
 
 -- | Produces a bytestring from a GET request to MtGox Http Api for fulldepth
-producerHttp :: IO (Maybe FullDepth)
-producerHttp = do
+fulldepth :: IO (Maybe FullDepth)
+fulldepth = do
     certStore <- getSystemCertificateStore 
     sStorage <- newIORef undefined
     runTLS' (getDefaultParams certStore sStorage Nothing) apiHost apiPort get
