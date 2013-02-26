@@ -1,5 +1,5 @@
 module Mtgox.HttpApi (
-    initO
+    fillOrderBook
     )
     where
 
@@ -22,12 +22,12 @@ apiHost = "mtgox.com"
 apiPort :: PortNumber
 apiPort = 443
 
-initO :: IO OrderBook
-initO = do o <- producerHttp 
-           case o of
-                Nothing -> return $ OrderBook [] []
-                Just d -> let a = map extract $ fulldepth_asks d 
-                              b = reverse $ map extract $ fulldepth_bids d in return $ OrderBook b a
+fillOrderBook :: IO OrderBook
+fillOrderBook = do o <- producerHttp 
+                   case o of
+                       Nothing -> return $ OrderBook [] []
+                       Just d -> let a = map extract $ fulldepth_asks d 
+                                     b = reverse $ map extract $ fulldepth_bids d in return $ OrderBook b a
 
 extract :: Depth -> (Integer, Integer)
 extract d = (depth_price_int d, depth_amount_int d)
@@ -39,7 +39,7 @@ producerHttp = do
     sStorage <- newIORef undefined
     runTLS' (getDefaultParams certStore sStorage Nothing) apiHost apiPort get
     
-get :: IO (Maybe FullDepth)
+get :: Context -> IO (Maybe FullDepth)
 get ctx = do handshake ctx
              sendData ctx $ LC.pack $ 
                  "GET /api/1/BTCUSD/fulldepth HTTP/1.1\r\n" ++

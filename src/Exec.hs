@@ -8,6 +8,7 @@ import Control.Proxy
 import Control.Proxy.Safe
 import Control.Proxy.Trans.State
 
+import Mtgox.HttpApi
 import Mtgox.Pipes.Consumer.OrderBook 
 import Mtgox.Pipes.Consumer.PersistDepthMsg 
 import Mtgox.Pipes.Pipe.Parser
@@ -65,3 +66,13 @@ exec6 = runErrorT go >>= either print print
 exec7 :: IO ()
 exec7 = runErrorT go >>= either print print
     where go = runProxy $ evalStateK (OrderBook [] []) $ producerDB >-> raiseK (orderBook >-> printD)
+
+--------------------------
+-- initialize orderbook --
+--------------------------
+
+-- | As in exec2 but with pre-filled order book via MtGox Http Api
+exec8 :: IO ()
+exec8 = fillOrderBook >>= \ob -> runSafeIO $ runProxy $ runEitherK $ evalStateK ob chain
+    where chain :: CheckP p => () -> StateP OrderBook (EitherP SomeException p) a' a () OrderBook SafeIO r
+          chain = mapP producerLive >-> hoistP try . (parse >-> orderBook >-> printD)
