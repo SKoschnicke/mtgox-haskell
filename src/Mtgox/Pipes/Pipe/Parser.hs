@@ -11,4 +11,4 @@ import Data.Mtgox
 
 -- | Pipe for parsing JSON messages as they come from MtGox
 parse :: (Monad m, Proxy p) => () -> Pipe p LC.ByteString (Maybe GoxMessage) m r
-parse () = runIdentityP $ forever $ request () >>= respond . decode
+parse = mapD decode
