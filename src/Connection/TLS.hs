@@ -39,12 +39,13 @@ instance SessionManager SessionRef where
     sessionInvalidate _ _ = return ()
 
 runTLS :: Proxy p => Params -> HostName -> PortNumber -> (Context -> S.ExceptionP p a' a b' b S.SafeIO r) -> S.ExceptionP p a' a b' b S.SafeIO r
-runTLS p h n f = S.bracket id (first p h n) last' (inbetween f)
+runTLS = runTLS'' (S.bracket id)
 
 runTLS' :: Params -> HostName -> PortNumber -> (Context -> IO a) -> IO a
-runTLS' p h n f = E.bracket (first p h n) last' (inbetween f)
+runTLS' = runTLS'' E.bracket 
 
-first params hostname portNumber = do
+runTLS'' :: (IO (Handle, Context) -> ((Handle, d) -> IO ()) -> ((a, b) -> c) -> t) -> Params -> HostName -> PortNumber -> (b -> c) -> t
+runTLS'' b params hostname portNumber f = b (do
     rng  <- RNG.makeSystem
     he   <- getHostByName hostname
     sock <- socket AF_INET Stream defaultProtocol
@@ -53,10 +54,9 @@ first params hostname portNumber = do
           (\(e :: E.SomeException) -> sClose sock >> error ("cannot open socket " ++ show sockaddr ++ " " ++ show e))
     dsth <- socketToHandle sock ReadWriteMode
     ctx <- contextNewOnHandle dsth params rng
-    return (dsth, ctx)
-
-last' = hClose . fst
-inbetween f = f . snd
+    return (dsth, ctx))
+    (hClose . fst)
+    (f . snd)
 
 getDefaultParams :: CertificateStore -> IORef (SessionID, SessionData) -> Maybe (SessionID, SessionData) -> Params
 getDefaultParams store sStorage session =
