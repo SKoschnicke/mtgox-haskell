@@ -27,7 +27,14 @@ exec1 = runSafeIO $ runProxy $ runEitherK $
 
 -- | Parse and construct order book from live feed 
 exec2 :: IO ()
-exec2 = runSafeIO $ runProxy $ runEitherK $ evalStateK (OrderBook [] []) chain
+exec2 = run $ OrderBook [] []
+
+-- | As in exec2 but with pre-filled order book via MtGox Http Api
+exec2a :: IO ()
+exec2a = fillOrderBook >>= run
+
+run :: OrderBook -> IO ()
+run ob = runSafeIO $ runProxy $ runEitherK $ evalStateK ob chain
     where chain :: CheckP p => () -> StateP OrderBook (EitherP SomeException p) a' a () OrderBook SafeIO r
           chain = mapP producerLive >-> hoistP try . (parse >-> orderBook >-> printD)
 
@@ -66,13 +73,3 @@ exec6 = runErrorT go >>= either print print
 exec7 :: IO ()
 exec7 = runErrorT go >>= either print print
     where go = runProxy $ evalStateK (OrderBook [] []) $ producerDB >-> raiseK (orderBook >-> printD)
-
---------------------------
--- initialize orderbook --
---------------------------
-
--- | As in exec2 but with pre-filled order book via MtGox Http Api
-exec8 :: IO ()
-exec8 = fillOrderBook >>= \ob -> runSafeIO $ runProxy $ runEitherK $ evalStateK ob chain
-    where chain :: CheckP p => () -> StateP OrderBook (EitherP SomeException p) a' a () OrderBook SafeIO r
-          chain = mapP producerLive >-> hoistP try . (parse >-> orderBook >-> printD)
