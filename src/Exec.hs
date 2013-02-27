@@ -25,7 +25,7 @@ exec1 :: IO ()
 exec1 = runSafeIO $ runProxy $ runEitherK $ 
     producerLive >-> tryK (parse >-> printD)
 
--- | Parse and construct order book from live feed with with pre-filled order book via MtGox Http Api
+-- | Parse and construct order book from live feed with pre-filled order book via MtGox Http Api
 exec2 :: IO ()
 exec2 = fillOrderBook >>= \ob -> runSafeIO $ runProxy $ runEitherK $ evalStateK ob chain
     where chain :: CheckP p => () -> StateP OrderBook (EitherP SomeException p) a' a () OrderBook SafeIO r
