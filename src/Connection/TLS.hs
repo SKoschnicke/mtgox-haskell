@@ -25,11 +25,11 @@ import qualified Control.Proxy.Safe as S
 
 ciphers :: [Cipher]
 ciphers =
-	[ cipher_AES128_SHA1
-	, cipher_AES256_SHA1
-	, cipher_RC4_128_MD5
-	, cipher_RC4_128_SHA1
-	]
+    [ cipher_AES128_SHA1
+    , cipher_AES256_SHA1
+    , cipher_RC4_128_MD5
+    , cipher_RC4_128_SHA1
+    ]
 
 data SessionRef = SessionRef (IORef (SessionID, SessionData))
 
@@ -39,32 +39,24 @@ instance SessionManager SessionRef where
     sessionInvalidate _ _ = return ()
 
 runTLS :: Proxy p => Params -> HostName -> PortNumber -> (Context -> S.ExceptionP p a' a b' b S.SafeIO r) -> S.ExceptionP p a' a b' b S.SafeIO r
-runTLS params hostname portNumber f = S.bracket id (do
-	rng  <- RNG.makeSystem
-	he   <- getHostByName hostname
-	sock <- socket AF_INET Stream defaultProtocol
-	let sockaddr = SockAddrInet portNumber (head $ hostAddresses he)
-	E.catch (connect sock sockaddr)
-	      (\(e :: E.SomeException) -> sClose sock >> error ("cannot open socket " ++ show sockaddr ++ " " ++ show e))
-	dsth <- socketToHandle sock ReadWriteMode
-	ctx <- contextNewOnHandle dsth params rng
-	return (dsth, ctx))
-	(hClose . fst)
-	(f . snd)
+runTLS p h n f = S.bracket id (first p h n) last' (inbetween f)
 
 runTLS' :: Params -> HostName -> PortNumber -> (Context -> IO a) -> IO a
-runTLS' params hostname portNumber f = E.bracket (do
-	rng  <- RNG.makeSystem
-	he   <- getHostByName hostname
-	sock <- socket AF_INET Stream defaultProtocol
-	let sockaddr = SockAddrInet portNumber (head $ hostAddresses he)
-	E.catch (connect sock sockaddr)
-	      (\(e :: E.SomeException) -> sClose sock >> error ("cannot open socket " ++ show sockaddr ++ " " ++ show e))
-	dsth <- socketToHandle sock ReadWriteMode
-	ctx <- contextNewOnHandle dsth params rng
-	return (dsth, ctx))
-	(hClose . fst)
-	(f . snd)
+runTLS' p h n f = E.bracket (first p h n) last' (inbetween f)
+
+first params hostname portNumber = do
+    rng  <- RNG.makeSystem
+    he   <- getHostByName hostname
+    sock <- socket AF_INET Stream defaultProtocol
+    let sockaddr = SockAddrInet portNumber (head $ hostAddresses he)
+    E.catch (connect sock sockaddr)
+          (\(e :: E.SomeException) -> sClose sock >> error ("cannot open socket " ++ show sockaddr ++ " " ++ show e))
+    dsth <- socketToHandle sock ReadWriteMode
+    ctx <- contextNewOnHandle dsth params rng
+    return (dsth, ctx)
+
+last' = hClose . fst
+inbetween f = f . snd
 
 getDefaultParams :: CertificateStore -> IORef (SessionID, SessionData) -> Maybe (SessionID, SessionData) -> Params
 getDefaultParams store sStorage session =
@@ -77,7 +69,7 @@ getDefaultParams store sStorage session =
         , onCertificatesRecv = crecv
         }
     where
-		setCParams cparams = cparams { clientWantSessionResume = session }
-		logging = defaultLogging
-		crecv = certificateVerifyChain store 
-		tlsConnectVer = TLS10
+        setCParams cparams = cparams { clientWantSessionResume = session }
+        logging = defaultLogging
+        crecv = certificateVerifyChain store 
+        tlsConnectVer = TLS10
