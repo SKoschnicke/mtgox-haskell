@@ -1,4 +1,4 @@
-module Mtgox.Pipes.Pipe.Close 
+module Mtgox.Pipes.Pipe.Utility
 (
 closeU
 )
