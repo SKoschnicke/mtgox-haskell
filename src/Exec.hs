@@ -27,7 +27,7 @@ exec1 = runSafeIO $ runProxy $ runEitherK $
 -- | Parse and construct order book from live feed with pre-filled order book via MtGox Http Api
 exec2 :: IO ()
 exec2 = runSafeIO $ runProxy $ runEitherK $ evalStateK (OrderBook [] []) chain
-    where chain :: CheckP p => () -> StateP OrderBook (EitherP SomeException p) C () () OrderBook SafeIO r
+    where chain :: CheckP p => () -> Producer (StateP OrderBook (EitherP SomeException p)) OrderBook SafeIO r
           chain = mapP producerLive >-> hoistP try . (parse >-> orderBook >-> printD)
 
 -- | Parse and store live feed in a local mongodb
