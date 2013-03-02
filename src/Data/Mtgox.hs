@@ -206,7 +206,7 @@ data Depth = Depth {
     , depth_amount :: Double
     , depth_price_int :: Integer
     , depth_amount_int :: Integer
-    , depth_stamp :: String
+    , depth_stamp :: Integer
     } deriving (Show, Eq)
 
 instance FromJSON Depth where
@@ -214,7 +214,7 @@ instance FromJSON Depth where
                                  <*> o .: "amount"
                                  <*> (read <$> o .: "price_int")
                                  <*> (read <$> o .: "amount_int")
-                                 <*> o .: "stamp"
+                                 <*> (read <$> o .: "stamp")
     parseJSON _ = mzero
 
 instance FromJSON FullDepth where
