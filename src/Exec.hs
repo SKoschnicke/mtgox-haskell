@@ -7,9 +7,7 @@ import Control.Monad.Error
 import Control.Proxy
 import Control.Proxy.Safe
 import Control.Proxy.Trans.State
-import System.IO.Unsafe
 
-import Mtgox.HttpApi
 import Mtgox.Pipes.Consumer.OrderBook 
 import Mtgox.Pipes.Consumer.PersistDepthMsg 
 import Mtgox.Pipes.Pipe.Parser
@@ -28,8 +26,8 @@ exec1 = runSafeIO $ runProxy $ runEitherK $
 
 -- | Parse and construct order book from live feed with pre-filled order book via MtGox Http Api
 exec2 :: IO ()
-exec2 = unsafeInterleaveIO fillOrderBook >>= \ob -> runSafeIO $ runProxy $ runEitherK $ evalStateK ob chain
-    where chain :: CheckP p => () -> StateP OrderBook (EitherP SomeException p) a' a () OrderBook SafeIO r
+exec2 = runSafeIO $ runProxy $ runEitherK $ evalStateK (OrderBook [] []) chain
+    where chain :: CheckP p => () -> StateP OrderBook (EitherP SomeException p) C () () OrderBook SafeIO r
           chain = mapP producerLive >-> hoistP try . (parse >-> orderBook >-> printD)
 
 -- | Parse and store live feed in a local mongodb
