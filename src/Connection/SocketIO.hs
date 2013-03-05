@@ -49,4 +49,5 @@ encode (Msg i endpoint payload) = (LC.pack $ "3:" ++ (show i) ++ ":" ++ endpoint
 encode (Json i endpoint payload) = (LC.pack $ "3:" ++ (show i) ++ ":" ++ endpoint ++ ":") `LC.append` payload
 encode (Event i endpoint payload) = (LC.pack $ "3:" ++ (show i) ++ ":" ++ endpoint ++ ":") `LC.append` payload
 encode (Ack i payload) = (LC.pack $ "6:::" ++ (show i) ++ "+") `LC.append` payload
+encode (Error endpoint reason advice) = LC.pack $ "7::" ++ endpoint ++ ":" ++ reason ++ "+" ++ advice
 encode Noop = LC.pack "8::"
