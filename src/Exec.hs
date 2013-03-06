@@ -8,8 +8,9 @@ import Control.Proxy
 import Control.Proxy.Safe
 import Control.Proxy.Trans.State
 
-import Mtgox.Pipes.Consumer.OrderBook 
+import Data.OrderBook
 import Mtgox.Pipes.Consumer.PersistDepthMsg 
+import Mtgox.Pipes.Pipe.OrderBook 
 import Mtgox.Pipes.Pipe.Parser
 import Mtgox.Pipes.Producer.File
 import Mtgox.Pipes.Producer.Live
