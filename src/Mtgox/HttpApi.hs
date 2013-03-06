@@ -13,7 +13,7 @@ import System.Certificate.X509
 
 import Connection.TLS
 import Data.Mtgox
-import Mtgox.Pipes.Consumer.OrderBook 
+import Data.OrderBook 
 
 apiHost :: String
 apiHost = "mtgox.com"
