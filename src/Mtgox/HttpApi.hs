@@ -34,6 +34,6 @@ request = withOpenSSL $ do
         http GET "/api/1/BTCUSD/fulldepth"
         setAccept "text/plain"
     sendRequest con req emptyBody
-    ob <- receiveResponse con (\_ i -> parseFromStream json i)
+    res <- receiveResponse con (\_ i -> parseFromStream json i)
     closeConnection con
-    return ob
+    return res
