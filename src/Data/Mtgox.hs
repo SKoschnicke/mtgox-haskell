@@ -219,10 +219,14 @@ instance FromJSON Depth where
 
 instance FromJSON FullDepth where
     parseJSON (Object o) = do res <- o .: "result"
-                              ret <- o .: "return"
-                              asks <- get "asks" ret
-                              bids <- get "bids" ret
-                              return $ FullDepth res asks bids
+                              case res of
+                                Just "error"   -> do err <- o .: "error"
+                                                     error err
+                                Just "success" -> do ret <- o .: "return"
+                                                     asks <- get "asks" ret
+                                                     bids <- get "bids" ret
+                                                     return $ FullDepth res asks bids
+                                _              -> undefined 
                            where get s o' = do Array a <- o' .:? s .!= (Array $ V.fromList [])
                                                V.toList <$> V.mapM (parseJSON :: Value -> Parser Depth) a
     parseJSON _ = mzero
