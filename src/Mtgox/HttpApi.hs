@@ -5,6 +5,7 @@ module Mtgox.HttpApi (
 
 import Data.Aeson
 import qualified Data.Attoparsec as A
+import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy.Char8 as LC
 import Data.IORef
 import Network.Socket (PortNumber)
@@ -23,25 +24,21 @@ apiPort = 443
 
 -- | Fill OrderBook with fulldepth data from MtGox Http Api
 fillOrderBook :: IO OrderBook
-fillOrderBook = do o <- fulldepth 
-                   case o of
-                       Nothing -> return $ OrderBook [] []
-                       Just d -> let a = map extract . fulldepth_asks $ d 
-                                     b = reverse . map extract . fulldepth_bids $ d in return $ OrderBook b a
-
--- | Helper needed for building the OrderBook
-extract :: Depth -> (Integer, Integer)
-extract d = (depth_price_int d, depth_amount_int d)
+fillOrderBook = fulldepth >>= either error create
+    where create r = let a = map extract . fulldepth_asks $ r 
+                         b = reverse . map extract . fulldepth_bids $ r in 
+                     return $ OrderBook b a
+          extract d = (depth_price_int d, depth_amount_int d)
 
 -- | Produces a bytestring from a GET request to MtGox Http Api for fulldepth
-fulldepth :: IO (Maybe FullDepth)
+fulldepth :: IO (Either String FullDepth)
 fulldepth = do
     certStore <- getSystemCertificateStore 
     sStorage <- newIORef undefined
     runTLS' (getDefaultParams certStore sStorage Nothing) apiHost apiPort get
     
 -- | Simple get for fulldepth and parsing of the response
-get :: Context -> IO (Maybe FullDepth)
+get :: Context -> IO (Either String FullDepth)
 get ctx = do 
     handshake ctx
     sendData ctx $ LC.pack $
@@ -49,15 +46,13 @@ get ctx = do
         "User-Agent: tls-hs\r\n" ++
         "Accept: */*\r\n" ++
         "Host: mtgox.com\r\n\r\n"
-    -- headers
-    _ <- recvData ctx
-    -- body (Chunked transfer encoding)
-    b <- recvData ctx
-    parserec $ A.parse json b
-    where parserec v = case v of
-                           A.Partial p -> recvData ctx >>= parserec . p 
-                           A.Done _ v -> return $ parseval v
-                           f@(A.Fail _ _ _) -> print f >> error "parsing fulldepth via Http Api"
-          parseval v = case (fromJSON v :: Result FullDepth) of
-                           Success a -> Just a
-                           _         -> Nothing
+    -- Chunked transfer encoding
+    a <- recvData ctx
+    let (_, b) = BC.breakSubstring (BC.pack "{\"result\"") a
+    e <- A.parseWith (recvData ctx) json b
+    case A.eitherResult e of
+        Left l -> error l
+        Right r -> let res = (fromJSON r :: Result FullDepth) in
+                   return $ parseval res
+    where parseval (Success a) = Right a
+          parseval (Error e)   = Left e
