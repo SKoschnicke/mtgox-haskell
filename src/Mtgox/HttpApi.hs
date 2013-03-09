@@ -24,10 +24,9 @@ apiPort = 443
 
 -- | Fill OrderBook with fulldepth data from MtGox Http Api
 fillOrderBook :: IO OrderBook
-fillOrderBook = fulldepth >>= either error create
+fillOrderBook = fulldepth >>= either error (return . create)
     where create r = let a = map extract . fulldepth_asks $ r 
-                         b = reverse . map extract . fulldepth_bids $ r in 
-                     return $ OrderBook b a
+                         b = reverse . map extract . fulldepth_bids $ r in OrderBook b a
           extract d = (depth_price_int d, depth_amount_int d)
 
 -- | Produces a bytestring from a GET request to MtGox Http Api for fulldepth
