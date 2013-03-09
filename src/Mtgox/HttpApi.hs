@@ -21,7 +21,7 @@ fillOrderBook = fulldepth >>= either error (return . create)
 
 -- | Parse JSON struct for fulldepth data
 fulldepth :: IO (Either String FullDepth)
-fulldepth = request >>= return . parseval . fromJSON
+fulldepth = fmap (parseval . fromJSON) request
     where parseval (Success a) = Right a
           parseval (Error e)   = Left e
 
