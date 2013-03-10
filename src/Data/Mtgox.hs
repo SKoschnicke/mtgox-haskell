@@ -100,7 +100,7 @@ data TickerMsg = TickerMsg {
 	} deriving (Show, Eq)
 
 instance FromJSON TickerMsg where
-	parseJSON (Object v) = let h s = v .: "ticker" >>= (\o -> o .: s)	
+	parseJSON (Object v) = let h s = v .: "ticker" >>= (.: s)
 		in TickerMsg <$> h "avg"
 						<*> h "buy"
 						<*> h "sell"
@@ -144,7 +144,7 @@ data TradeMsg = TradeMsg {
 	} deriving (Show, Eq)
 
 instance FromJSON TradeMsg where
-	parseJSON (Object v) = let h s = v .: "trade" >>= (\o -> o .: s)
+	parseJSON (Object v) = let h s = v .: "trade" >>= (.: s)
 		in TradeMsg <$> h "amount"
 					<*> (read <$> h "amount_int")
 					<*> h "date"
@@ -173,7 +173,7 @@ data DepthMsg = DepthMsg {
 } deriving (Show, Eq)
 
 instance FromJSON DepthMsg where
-	parseJSON (Object v) = let h s = v .: "depth" >>= (\o -> o .: s)
+	parseJSON (Object v) = let h s = v .: "depth" >>= (.: s)
 		in DepthMsg <$> h "currency"
 					<*> h "item"
 					<*> (read <$> h "now")

@@ -7,3 +7,5 @@
 *.ps
 *.swp
 dist/
+cabal-dev/
+tags

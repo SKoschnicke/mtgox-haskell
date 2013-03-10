@@ -9,7 +9,7 @@ import qualified Data.ByteString.Lazy.Char8 as LC
 
 -- | Adds a websocket frame.
 frame :: LC.ByteString -> LC.ByteString
-frame = ((flip LC.snoc) '\xff') . (LC.cons '\x00')
+frame = flip LC.snoc '\xff' . LC.cons '\x00'
 
 -- | Removes a websocket frame.
 unframe :: LC.ByteString -> LC.ByteString
