@@ -28,7 +28,10 @@ initOrderBook () = do
                 Just ob -> return $ applyUpdates (msg : msgs) ob
 
 applyUpdates :: [DepthMsg] -> FullDepth -> OrderBook
-applyUpdates msgs fulld = foldr updateOrderBook (OrderBook [] []) (dropOld (obWithStamps fulld) msgs)
+applyUpdates msgs fulld = foldr updateOrderBook ob (dropOld ob' msgs)
+    where
+        ob = OrderBook [(x, y) | (x, (y, z)) <- fst ob'] [(x, y) | (x, (y, z)) <- snd ob']
+        ob' = obWithStamps fulld 
     
 obWithStamps :: FullDepth -> ([(Integer, (Integer, Integer))], [(Integer, (Integer, Integer))])
 obWithStamps fulld = create fulld 
@@ -46,7 +49,7 @@ dropOld ob msgs = filter h msgs
         
         g d xs = case lookup (d_price_int d) xs of
                     Nothing -> True
-                    Just (_, stamp) -> if now d > stamp then True else False
+                    Just (_, stamp) -> if now d < stamp then True else False
 
 -- | Pipe that creates an order book and prints it to stdout
 orderBook :: (CheckP p) => () -> Pipe (S.StateP OrderBook p) DepthMsg OrderBook IO r
