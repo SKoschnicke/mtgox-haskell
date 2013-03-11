@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Mtgox.HttpApi (
-    fillOrderBook
+    fillOrderBook,
+    fulldepth
     )
     where
 
