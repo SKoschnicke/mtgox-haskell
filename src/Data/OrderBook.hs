@@ -60,6 +60,7 @@ updateOrderBook d ob | type_str d == Ask =
         update (p, v) = let new_volume = v + volume_int d in
                           if new_volume == 0 then [] else [(p, new_volume)] 
         insert (p, v) = if v <= 0 then [] else [(p, v)]
+updateOrderBook _ _ | otherwise = error "unknown trade type." 
 
 invertOrdering :: Ordering -> Ordering
 invertOrdering LT = GT

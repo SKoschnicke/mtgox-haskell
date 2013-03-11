@@ -4,7 +4,6 @@ module Mtgox.Pipes.Producer.RetrieveDepthMsg (
     )
     where
 
-import Control.Monad ( unless ) 
 import Control.Monad.Error
 import Control.Proxy
 import Database.MongoDB

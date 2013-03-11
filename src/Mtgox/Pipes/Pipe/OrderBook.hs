@@ -30,7 +30,7 @@ initOrderBook () = do
 applyUpdates :: [DepthMsg] -> FullDepth -> OrderBook
 applyUpdates msgs fulld = foldr updateOrderBook ob (dropOld ob' msgs)
     where
-        ob = OrderBook [(x, y) | (x, (y, z)) <- fst ob'] [(x, y) | (x, (y, z)) <- snd ob']
+        ob = OrderBook [(x, y) | (x, (y, _)) <- fst ob'] [(x, y) | (x, (y, _)) <- snd ob']
         ob' = obWithStamps fulld 
     
 obWithStamps :: FullDepth -> ([(Integer, (Integer, Integer))], [(Integer, (Integer, Integer))])
@@ -44,8 +44,10 @@ obWithStamps fulld = create fulld
 dropOld :: ([(Integer, (Integer, Integer))], [(Integer, (Integer, Integer))]) -> [DepthMsg] -> [DepthMsg]
 dropOld ob msgs = filter h msgs
     where
-        h d | type_str d == Bid =  g d (fst ob) 
-        h d | type_str d == Ask =  g d (snd ob)
+        h d 
+            | type_str d == Bid =  g d (fst ob) 
+            | type_str d == Ask =  g d (snd ob)
+            | otherwise = error "unkonw type string."
         
         g d xs = case lookup (d_price_int d) xs of
                     Nothing -> True
