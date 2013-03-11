@@ -55,6 +55,7 @@ updateOrderBook d ob | type_str d == Bid =
 updateOrderBook d ob | type_str d == Ask = 
     ob {asks = insertWith comp update insert (d_price_int d, total_volume_int d) (asks ob)}
     where
+        comp = compare
         update (p, _) | volume_int d == 0 = [(p, total_volume_int d)]
         update (p, v) = let new_volume = v + volume_int d in
                           if new_volume == 0 then [] else [(p, new_volume)] 
