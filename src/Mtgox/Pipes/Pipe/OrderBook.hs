@@ -15,7 +15,7 @@ import Mtgox.HttpApi
 
 initOrderBook :: (CheckP p) => () -> Pipe (S.StateP OrderBook p) DepthMsg a IO () 
 initOrderBook () = do
-    var <- lift $ newEmptyMVar
+    var <- lift newEmptyMVar
     _ <- lift $ forkIO $ fulldepth >>= either error (putMVar var)
     ob <- buffer [] var
     lift $ print ob
@@ -34,22 +34,22 @@ applyUpdates msgs fulld = foldr updateOrderBook ob (dropOld ob' msgs)
         ob' = obWithStamps fulld 
     
 obWithStamps :: FullDepth -> ([(Integer, (Integer, Integer))], [(Integer, (Integer, Integer))])
-obWithStamps fulld = create fulld 
+obWithStamps = create 
     where
         create r = let 
-            a = map extract . fulldepth_asks $ r 
-            b = reverse . map extract . fulldepth_bids $ r in (b, a)
-            where extract d = (depth_price_int d, (depth_amount_int d, depth_stamp d))
+            a = map extract . fulldepthAsks $ r 
+            b = reverse . map extract . fulldepthBids $ r in (b, a)
+            where extract d = (depthPrice_int d, (depthAmount_int d, depthStamp d))
 
 dropOld :: ([(Integer, (Integer, Integer))], [(Integer, (Integer, Integer))]) -> [DepthMsg] -> [DepthMsg]
-dropOld ob msgs = filter h msgs
+dropOld ob = filter h
     where
         h d 
             | type_str d == Bid =  g d (fst ob) 
             | type_str d == Ask =  g d (snd ob)
             | otherwise = error "unkonw type string."
         
-        g d xs = case lookup (d_price_int d) xs of
+        g d xs = case lookup (dPrice_int d) xs of
                     Nothing -> True
                     Just (_, stamp) -> if now d < stamp then True else False
 

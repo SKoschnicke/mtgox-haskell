@@ -45,7 +45,7 @@ instance Show OrderBook where
 
 updateOrderBook :: DepthMsg -> OrderBook -> OrderBook
 updateOrderBook d ob | type_str d == Bid = 
-    ob {bids = insertWith comp update insert (d_price_int d, total_volume_int d) (bids ob)}
+    ob {bids = insertWith comp update insert (dPrice_int d, total_volume_int d) (bids ob)}
     where
         comp p1 p2 = invertOrdering $ compare p1 p2
         update (p, _) | volume_int d == 0 = [(p, total_volume_int d)]
@@ -53,7 +53,7 @@ updateOrderBook d ob | type_str d == Bid =
                           if new_volume == 0 then [] else [(p, new_volume)]
         insert (p, v) = if v <= 0 then [] else [(p, v)]
 updateOrderBook d ob | type_str d == Ask = 
-    ob {asks = insertWith comp update insert (d_price_int d, total_volume_int d) (asks ob)}
+    ob {asks = insertWith comp update insert (dPrice_int d, total_volume_int d) (asks ob)}
     where
         comp = compare
         update (p, _) | volume_int d == 0 = [(p, total_volume_int d)]
