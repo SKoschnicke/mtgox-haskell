@@ -1,7 +1,6 @@
 module Mtgox where
 
--- commented as drone.io seems to have a problem with dependencies using native code 
--- import Mtgox.HttpApi
+import Mtgox.HttpApi
 import Data.OrderBook 
 import Mtgox.Pipes.Consumer.PersistDepthMsg 
 import Mtgox.Pipes.Pipe.Parser

@@ -1,75 +1,35 @@
--- Most of this code comes from the TLS package.
--- http://hackage.haskell.org/package/tls.
---
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Connection.TLS (
-runTLS,
-runTLS',
-getDefaultParams
+runTLS
 )
 where
 
-import Network.BSD
-import Network.Socket (socket, socketToHandle, Family(..), SocketType(..), sClose, SockAddr(..), connect)
-import qualified Crypto.Random.AESCtr as RNG
-import Data.CertificateStore
-import Data.IORef
-import Network.TLS
-import Network.TLS.Extra
-import qualified Control.Exception as E
-import System.IO
-
 import Control.Proxy
+import qualified Control.Exception as E
 import qualified Control.Proxy.Safe as S
+import Network.BSD
+import Network.Socket (socket, connect, close, Family(..), SocketType(..), SockAddr(..))
+import qualified OpenSSL as SSL
+import qualified OpenSSL.Session as SSL
 
-ciphers :: [Cipher]
-ciphers =
-    [ cipher_AES128_SHA1
-    , cipher_AES256_SHA1
-    , cipher_RC4_128_MD5
-    , cipher_RC4_128_SHA1
-    ]
+ciphers :: String
+ciphers = "TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA, TLS_RSA_WITH_RC4_128_MD5, TLS_RSA_WITH_RC4_128_SHA"
 
-data SessionRef = SessionRef (IORef (SessionID, SessionData))
+runTLS :: Proxy p => HostName -> PortNumber -> (SSL.SSL -> S.ExceptionP p a' a b' b S.SafeIO r) -> S.ExceptionP p a' a b' b S.SafeIO r
+runTLS = runTLS' (S.bracket id)
 
-instance SessionManager SessionRef where
-    sessionEstablish (SessionRef ref) sid sdata = writeIORef ref (sid,sdata)
-    sessionResume (SessionRef ref) sid = readIORef ref >>= \(s,d) -> if s == sid then return (Just d) else return Nothing
-    sessionInvalidate _ _ = return ()
-
-runTLS :: Proxy p => Params -> HostName -> PortNumber -> (Context -> S.ExceptionP p a' a b' b S.SafeIO r) -> S.ExceptionP p a' a b' b S.SafeIO r
-runTLS = runTLS'' (S.bracket id)
-
-runTLS' :: Params -> HostName -> PortNumber -> (Context -> IO a) -> IO a
-runTLS' = runTLS'' E.bracket 
-
-runTLS'' :: (IO (Handle, Context) -> ((Handle, d) -> IO ()) -> ((a, b) -> c) -> t) -> Params -> HostName -> PortNumber -> (b -> c) -> t
-runTLS'' b params hostname portNumber f = b (do
-    rng  <- RNG.makeSystem
+runTLS' :: (IO SSL.SSL -> (SSL.SSL -> IO ()) -> (a -> b)) -> HostName -> PortNumber -> a -> b
+runTLS' b hostname portNumber f = b (SSL.withOpenSSL $ do
     he   <- getHostByName hostname
     sock <- socket AF_INET Stream defaultProtocol
     let sockaddr = SockAddrInet portNumber (head $ hostAddresses he)
     E.catch (connect sock sockaddr)
-          (\(e :: E.SomeException) -> sClose sock >> error ("cannot open socket " ++ show sockaddr ++ " " ++ show e))
-    dsth <- socketToHandle sock ReadWriteMode
-    ctx <- contextNewOnHandle dsth params rng
-    return (dsth, ctx))
-    (hClose . fst)
-    (f . snd)
-
-getDefaultParams :: CertificateStore -> IORef (SessionID, SessionData) -> Maybe (SessionID, SessionData) -> Params
-getDefaultParams store sStorage session =
-    updateClientParams setCParams $ setSessionManager (SessionRef sStorage) $ defaultParamsClient
-        { pConnectVersion    = tlsConnectVer
-        , pAllowedVersions   = [TLS10,TLS11,TLS12]
-        , pCiphers           = ciphers
-        , pCertificates      = []
-        , pLogging           = logging
-        , onCertificatesRecv = crecv
-        }
-    where
-        setCParams cparams = cparams { clientWantSessionResume = session }
-        logging = defaultLogging
-        crecv = certificateVerifyChain store 
-        tlsConnectVer = TLS10
+          (\(e :: E.SomeException) -> close sock >> error ("cannot open socket " ++ show sockaddr ++ " " ++ show e))
+    ctx <- SSL.context
+    --SSL.contextSetCiphers ctx ciphers
+    SSL.contextSetDefaultCiphers ctx
+    SSL.connection ctx sock
+    )
+    (\ssl -> do SSL.shutdown ssl SSL.Unidirectional
+                maybe (return ()) close $ SSL.sslSocket ssl)
+    f
