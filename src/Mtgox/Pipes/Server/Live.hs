@@ -7,14 +7,15 @@ import Control.Proxy
 import Control.Proxy.Safe
 import qualified Data.ByteString.Lazy.Char8 as LC
 import qualified Data.ByteString.Char8 as BC
-import Data.IORef
 import Network.Socket (PortNumber)
-import Network.TLS
-import System.Certificate.X509
 
 import Connection.TLS
 import qualified Connection.SocketIO as SIO
 import Connection.WebSocket
+
+import qualified OpenSSL.Session as SSL
+import qualified System.IO.Streams as Streams
+import qualified System.IO.Streams.SSL as SSLStreams
 
 apiHost :: String
 apiHost = "socketio.mtgox.com"
@@ -27,32 +28,36 @@ serverLive = connection >-> websocket >-> socketio
 
 -- | Producer of bytestrings from live MtGox feed
 connection :: CheckP p => LC.ByteString -> Server (EitherP SomeException p) LC.ByteString LC.ByteString SafeIO b
-connection bs = do
-    certStore <- tryIO getSystemCertificateStore 
-    sStorage <- tryIO $ newIORef undefined
-    runTLS (getDefaultParams certStore sStorage Nothing) apiHost apiPort (\ctx -> do
-            tryIO $ handshake ctx
-            tryIO $ sendData ctx $ LC.pack "GET /socket.io/1/ HTTP/1.1\r\n\r\n"
-            d <- tryIO $ recvData ctx
+connection bs = runTLS apiHost apiPort (\ssl -> do
+            tryIO $ SSL.connect ssl
+            (is, os) <- tryIO $ SSLStreams.sslToStreams ssl
+            tryIO $ Streams.write (Just $ BC.pack "GET /socket.io/1/ HTTP/1.1\r\n\r\n") os
+            Just d <- tryIO $ Streams.read is
             tryIO $ BC.putStrLn d
-            tryIO $ sendData ctx $ 
-                LC.pack $ 
+            tryIO $ Streams.write (Just $
+                BC.pack $
                 "GET /socket.io/1/websocket/" ++ parseSid d ++ " HTTP/1.1\r\n" ++
                 "Upgrade: WebSocket\r\n" ++
                 "Connection: Upgrade\r\n" ++
                 "Host: socketio.mtgox.com\r\n" ++
-                "Origin: *\r\n\r\n"
-            d' <- tryIO $ recvData ctx
+                "Origin: *\r\n\r\n") os
+            Just d' <- tryIO $ Streams.read is
             tryIO $ BC.putStrLn d'
-            tryIO $ sendData ctx $ frame $ LC.pack "1::/mtgox"
-            worker ctx bs
+            tryIO $ Streams.write (Just $ toStrict . frame $ LC.pack "1::/mtgox") os
+            worker is os bs
             )
 
-worker :: (CheckP p) => Context -> LC.ByteString -> Server (EitherP SomeException p) LC.ByteString LC.ByteString SafeIO b
-worker ctx = foreverK $ \bs -> do 
-	tryIO $ sendData ctx bs
-	d <- tryIO $ recvData' ctx 
-	respond d
+worker :: (CheckP p) => Streams.InputStream BC.ByteString -> Streams.OutputStream BC.ByteString -> LC.ByteString -> Server (EitherP SomeException p) LC.ByteString LC.ByteString SafeIO b
+worker is os = foreverK $ \bs -> do
+    tryIO $ Streams.write (Just $ toStrict bs) os
+    Just d <- tryIO $ Streams.read is
+    respond $ fromStrict d
+
+fromStrict :: BC.ByteString -> LC.ByteString
+fromStrict s = LC.fromChunks [s]
+
+toStrict :: LC.ByteString -> BC.ByteString
+toStrict = BC.concat . LC.toChunks
 
 socketio :: CheckP p => Maybe SIO.SocketIO -> EitherP SomeException p LC.ByteString LC.ByteString (Maybe SIO.SocketIO) LC.ByteString SafeIO b
 socketio = mapB SIO.parse encodeMaybe >-> sioHandler
