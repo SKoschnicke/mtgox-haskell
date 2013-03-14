@@ -40,7 +40,7 @@ instance FromJSON GoxMessage where
 	parseJSON v@(Object _) = (S <$> parseJSON v) <|> (US <$> parseJSON v) <|> (Rem <$> parseJSON v) <|> (P <$> parseJSON v) <|> (R <$> parseJSON v)
 	parseJSON _ = mzero
  
-data SubscribeMsg = SubscribeMsg { s_channel :: String} deriving (Show, Eq)
+data SubscribeMsg = SubscribeMsg { sChannel :: String} deriving (Show, Eq)
 
 instance FromJSON SubscribeMsg where
 	parseJSON (Object v) = v .: "op" >>= withText "op" (\str -> if str == "subscribe" 
@@ -48,7 +48,7 @@ instance FromJSON SubscribeMsg where
 																else mzero)
 	parseJSON _ = mzero
 
-data UnsubscribeMsg = UnsubscribeMsg { u_channel :: String } deriving (Show, Eq)
+data UnsubscribeMsg = UnsubscribeMsg { uChannel :: String } deriving (Show, Eq)
 
 instance FromJSON UnsubscribeMsg where
 	parseJSON (Object v) = v .: "op" >>= withText "op" (\str -> if str == "unsubscribe"
@@ -64,7 +64,7 @@ instance FromJSON RemarkMsg where
 																else mzero)
 	parseJSON _ = mzero
 
-data PrivateMsg = PrivateMsg {p_channel :: String, p_origin :: String, p_private :: PrivateMsgType} deriving (Show, Eq)
+data PrivateMsg = PrivateMsg {pChannel :: String, pOrigin :: String, pPrivate :: PrivateMsgType} deriving (Show, Eq)
 
 instance FromJSON PrivateMsg where
 	parseJSON o@(Object v) = v .: "op" >>= withText "op" (\str -> if str == "private"
@@ -87,17 +87,17 @@ instance FromJSON ResultMsg where
 	parseJSON _ = mzero
 
 data TickerMsg = TickerMsg {
-	avg :: TickerPrice,
-	buy :: TickerPrice,
-	sell :: TickerPrice,
-	high :: TickerPrice,
-	low :: TickerPrice,
-	vol :: TickerPrice,
-	last :: TickerPrice,
+	avg        :: TickerPrice,
+	buy        :: TickerPrice,
+	sell       :: TickerPrice,
+	high       :: TickerPrice,
+	low        :: TickerPrice,
+	vol        :: TickerPrice,
+	last       :: TickerPrice,
 	last_local :: TickerPrice,
-	last_orig :: TickerPrice,
-	last_all :: TickerPrice,
-	vwap :: TickerPrice
+	last_orig  :: TickerPrice,
+	last_all   :: TickerPrice,
+	vwap       :: TickerPrice
 	} deriving (Show, Eq)
 
 instance FromJSON TickerMsg where
@@ -117,9 +117,9 @@ instance FromJSON TickerMsg where
 
 data TickerPrice = TickerPrice {
 	tip_currency :: String,
-	display :: String,
-	value :: Double,
-	value_int :: Integer
+	display      :: String,
+	value        :: Double,
+	value_int    :: Integer
 } deriving (Show, Eq)
 
 instance FromJSON TickerPrice where
@@ -130,18 +130,18 @@ instance FromJSON TickerPrice where
 	parseJSON _ = mzero
 
 data TradeMsg = TradeMsg {
-	amount :: Double,
-	amount_int :: Integer,
-	date :: Integer,
-	tr_item :: String,
-	tr_price :: Double,
+	amount         :: Double,
+	amount_int     :: Integer,
+	date           :: Integer,
+	trItem         :: String,
+	trPrice        :: Double,
 	price_currency :: String,
-	tr_price_int :: Integer,
-	primary :: String,
-	properties :: String,
-	tid :: Integer,
-	trade_type :: TradeType,
-	tr_type :: String
+	trPrice_int    :: Integer,
+	primary        :: String,
+	properties     :: String,
+	tid            :: Integer,
+	trade_type     :: TradeType,
+	trType         :: String
 	} deriving (Show, Eq)
 
 instance FromJSON TradeMsg where
@@ -161,16 +161,16 @@ instance FromJSON TradeMsg where
 	parseJSON _ = mzero
 
 data DepthMsg = DepthMsg {
-	d_currency :: String,
-	d_item :: String,
-	now :: Integer,
-	d_price :: Double,
-	d_price_int :: Integer,
+	dCurrency        :: String,
+	dItem            :: String,
+	now              :: Integer,
+	dPrice           :: Double,
+	dPrice_int       :: Integer,
 	total_volume_int :: Integer,
-	d_type :: Int,
-	type_str :: TradeType,
-	volume :: Double,
-	volume_int :: Integer
+	dType            :: Int,
+	type_str         :: TradeType,
+	volume           :: Double,
+	volume_int       :: Integer
 } deriving (Show, Eq)
 
 instance FromJSON DepthMsg where
@@ -197,17 +197,17 @@ instance FromJSON TradeType where
 -- Depth struct used in the HTTP Api, https://mtgox.com/api/1/BTCUSD/fulldepth
 
 data FullDepth = FullDepth {
-      fulldepth_result :: Maybe String
-    , fulldepth_asks :: [Depth]
-    , fulldepth_bids :: [Depth]
+      fulldepthResult :: Maybe String
+      , fulldepthAsks :: [Depth]
+      , fulldepthBids :: [Depth]
     } deriving (Show, Eq)
 
 data Depth = Depth {
-      depth_price :: Double
-    , depth_amount :: Double
-    , depth_price_int :: Integer
-    , depth_amount_int :: Integer
-    , depth_stamp :: Integer
+      depthPrice        :: Double
+      , depthAmount     :: Double
+      , depthPrice_int  :: Integer
+      , depthAmount_int :: Integer
+      , depthStamp      :: Integer
     } deriving (Show, Eq)
 
 instance FromJSON Depth where

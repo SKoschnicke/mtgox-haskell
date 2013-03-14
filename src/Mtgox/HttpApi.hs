@@ -17,9 +17,9 @@ import Data.OrderBook
 -- | Fill OrderBook with fulldepth data from MtGox Http Api
 fillOrderBook :: Currency -> IO OrderBook
 fillOrderBook c = fulldepth c >>= either error (return . create)
-    where create r = let a = map extract . fulldepth_asks $ r 
-                         b = reverse . map extract . fulldepth_bids $ r in OrderBook b a
-          extract d = (depth_price_int d, depth_amount_int d)
+    where create r = let a = map extract . fulldepthAsks $ r 
+                         b = reverse . map extract . fulldepthBids $ r in OrderBook b a
+          extract d = (depthPrice_int d, depthAmount_int d)
 
 -- | Parse JSON struct for fulldepth data
 fulldepth :: Currency -> IO (Either String FullDepth)
