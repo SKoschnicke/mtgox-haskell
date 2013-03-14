@@ -9,6 +9,7 @@ import Control.Proxy.Safe
 import Control.Proxy.Trans.State
 import Data.Maybe (isJust, fromJust)
 
+import Data.Mtgox
 import Data.OrderBook
 import Mtgox.Pipes.Consumer.PersistDepthMsg 
 import Mtgox.Pipes.Pipe.OrderBook 
@@ -25,18 +26,19 @@ import Mtgox.Pipes.Pipe.Filter
 -- | Parse and print messages from live feed to stdout
 exec1 :: IO ()
 exec1 = runSafeIO $ runProxy $ runEitherK $ 
-    producerLive >-> tryK (parse >-> printD)
+    producerLive USD >-> tryK (parse >-> printD)
 
 -- | Parse and construct order book from live feed with pre-filled order book via MtGox Http Api
 exec2 :: IO ()
 exec2 = runSafeIO $ runProxy $ runEitherK $ evalStateK (OrderBook [] []) chain
     where chain :: CheckP p => () -> Producer (StateP OrderBook (EitherP SomeException p)) OrderBook SafeIO r
-          chain = mapP producerLive >-> hoistP try . (parse >-> filterD isJust >-> mapD fromJust >-> filterDepth >-> (initOrderBook >=> orderBook) >-> printD)
+          chain = mapP (producerLive currency) >-> hoistP try . (parse >-> filterD isJust >-> mapD fromJust >-> filterDepth >-> (initOrderBook currency >=> orderBook) >-> printD)
+          currency = USD
 
 -- | Parse and store live feed in a local mongodb
 exec3 :: IO ()
 exec3 = runSafeIO $ runProxy $ runEitherK $ 
-    producerLive >-> tryK (parse >-> persistDB)
+    producerLive USD >-> tryK (parse >-> persistDB)
 
 ----------------
 -- read files --

@@ -24,6 +24,7 @@ DepthMsg (..),
 TradeType (..),
 FullDepth (..),
 Depth (..),
+Currency (..),
 )
 where
 
@@ -230,3 +231,5 @@ instance FromJSON FullDepth where
                            where get s o' = do Array a <- o' .:? s .!= (Array $ V.fromList [])
                                                V.toList <$> V.mapM (parseJSON :: Value -> Parser Depth) a
     parseJSON _ = mzero
+
+data Currency = USD | AUD | CAD | CHF | CNY | DKK | EUR | GBP | HKD | JPY | NZD | PLN | RUB | SEK | SGD | THB deriving (Show, Eq)

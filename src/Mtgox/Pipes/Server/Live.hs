@@ -17,21 +17,23 @@ import qualified OpenSSL.Session as SSL
 import qualified System.IO.Streams as Streams
 import qualified System.IO.Streams.SSL as SSLStreams
 
+import Data.Mtgox
+
 apiHost :: String
 apiHost = "socketio.mtgox.com"
 
 apiPort :: PortNumber
 apiPort = 443
 
-serverLive :: CheckP p => Maybe SIO.SocketIO -> Server (EitherP SomeException p) (Maybe SIO.SocketIO) LC.ByteString SafeIO b
-serverLive = connection >-> websocket >-> socketio
+serverLive :: CheckP p => Currency -> Maybe SIO.SocketIO -> Server (EitherP SomeException p) (Maybe SIO.SocketIO) LC.ByteString SafeIO b
+serverLive c = connection c >-> websocket >-> socketio
 
 -- | Producer of bytestrings from live MtGox feed
-connection :: CheckP p => LC.ByteString -> Server (EitherP SomeException p) LC.ByteString LC.ByteString SafeIO b
-connection bs = runTLS apiHost apiPort (\ssl -> do
+connection :: CheckP p => Currency -> LC.ByteString -> Server (EitherP SomeException p) LC.ByteString LC.ByteString SafeIO b
+connection c bs = runTLS apiHost apiPort (\ssl -> do
             tryIO $ SSL.connect ssl
             (is, os) <- tryIO $ SSLStreams.sslToStreams ssl
-            tryIO $ Streams.write (Just $ BC.pack "GET /socket.io/1/ HTTP/1.1\r\n\r\n") os
+            tryIO $ Streams.write (Just $ BC.pack $ "GET /socket.io/1/?Currency=" ++ show c ++ " HTTP/1.1\r\n\r\n") os
             Just d <- tryIO $ Streams.read is
             tryIO $ BC.putStrLn d
             tryIO $ Streams.write (Just $
