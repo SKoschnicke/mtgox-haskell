@@ -5,7 +5,7 @@ module Data.OrderBook (
     where
 
 import Text.PrettyPrint.Boxes
-
+import Text.Printf
 import Data.Mtgox
 
 -- | Inserts (key, value) pairs into an ordered list.
@@ -35,13 +35,22 @@ data OrderBook = OrderBook { bids :: [(Integer, Integer)], asks :: [(Integer, In
 instance Show OrderBook where
     show ob = 
         let     
-            h caption position xs = vcat left $ map text $ caption : map (show . position) (take 10 xs)
-            bid_box = h "bids:" fst (bids ob)
-            bid_vol_box = h "vol:" snd (bids ob)
-            ask_box = h "asks:" fst (asks ob)
-            ask_vol_box = h "vol:" snd (asks ob)
-        in
+            h caption position xs = vcat left $ map text $ caption : map position (take 10 xs)
+            bid_box = h "bids:" show_price (bids ob)
+            bid_vol_box = h "vol:" show_volume (bids ob)
+            ask_box = h "asks:" show_price (asks ob)
+            ask_vol_box = h "vol:" show_volume (asks ob)
+            show_price = format_price . scale_price . fst
+            show_volume = format_volume . scale_volume . snd
+       in
             render $ hsep 4 top [bid_vol_box, bid_box, ask_box, ask_vol_box]
+       where
+            scale_price = (/1e5) . fromInteger
+            scale_volume = (/1e8) . fromInteger
+            format_price :: Double -> String
+            format_price = printf "%.5f"
+            format_volume :: Double -> String
+            format_volume = printf "%.4f"
 
 updateOrderBook :: DepthMsg -> OrderBook -> OrderBook
 updateOrderBook d ob | type_str d == Bid = 
