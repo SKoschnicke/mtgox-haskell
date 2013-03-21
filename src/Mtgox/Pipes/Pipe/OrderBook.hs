@@ -15,9 +15,10 @@ import Mtgox.HttpApi
 
 initOrderBook :: (CheckP p) => Currency -> () -> Pipe (S.StateP OrderBook p) DepthMsg a IO () 
 initOrderBook c () = do
+    msg <- request ()
     var <- lift newEmptyMVar
     _ <- lift $ forkIO $ fulldepth c >>= either error (putMVar var)
-    ob <- buffer [] var
+    ob <- buffer [msg] var
     lift $ print ob
     S.put ob
     where buffer msgs v = do 
