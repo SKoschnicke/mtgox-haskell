@@ -1,5 +1,5 @@
 module Data.OrderBook (
-      OrderBook(..)
+      OrderBook (..)
     , updateOrderBook
     )
     where
