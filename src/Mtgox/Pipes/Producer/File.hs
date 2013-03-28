@@ -9,7 +9,7 @@ import Control.Proxy.Safe
 import System.IO 
 
 -- | Safely read a file (as in the pipes-safe tutorial) and pack strings into a bytestring
-readFileS :: CheckP p => FilePath -> () -> ExceptionP p C () () LC.ByteString SafeIO ()
+readFileS :: CheckP p => FilePath -> () -> Producer (ExceptionP p) LC.ByteString SafeIO ()
 readFileS file = withFileS file (tryK . hGetLineS) >-> tryK pack
 
 withFileS :: (Proxy p) => FilePath -> (Handle -> b' -> ExceptionP p a' a b' b SafeIO r) -> b' -> ExceptionP p a' a b' b SafeIO r
