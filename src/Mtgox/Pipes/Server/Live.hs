@@ -16,8 +16,10 @@ import Connection.WebSocket
 import qualified OpenSSL.Session as SSL
 import qualified System.IO.Streams as Streams
 import qualified System.IO.Streams.SSL as SSLStreams
+import qualified System.IO.Streams.Attoparsec as AttoStream
 
 import Data.Mtgox
+import Connection.HttpParser
 
 apiHost :: String
 apiHost = "socketio.mtgox.com"
@@ -34,17 +36,17 @@ connection c bs = runTLS apiHost apiPort (\ssl -> do
             tryIO $ SSL.connect ssl
             (is, os) <- tryIO $ SSLStreams.sslToStreams ssl
             tryIO $ Streams.write (Just $ BC.pack $ "GET /socket.io/1/?Currency=" ++ show c ++ " HTTP/1.1\r\n\r\n") os
-            Just d <- tryIO $ Streams.read is
-            tryIO $ BC.putStrLn d
+            s <- tryIO $ AttoStream.parseFromStream (header >> chunk) is
             tryIO $ Streams.write (Just $
                 BC.pack $
-                "GET /socket.io/1/websocket/" ++ parseSid d ++ " HTTP/1.1\r\n" ++
+                "GET /socket.io/1/websocket/" ++ parseSid s ++ " HTTP/1.1\r\n" ++
                 "Upgrade: WebSocket\r\n" ++
                 "Connection: Upgrade\r\n" ++
                 "Host: socketio.mtgox.com\r\n" ++
                 "Origin: *\r\n\r\n") os
             Just d' <- tryIO $ Streams.read is
             tryIO $ BC.putStrLn d'
+            _ <- tryIO $ Streams.read is
             tryIO $ Streams.write (Just $ toStrict . frame $ LC.pack "1::/mtgox") os
             worker is os bs
             )
@@ -85,6 +87,6 @@ sioHandler = foreverK go
 websocket :: CheckP p => LC.ByteString -> EitherP SomeException p LC.ByteString LC.ByteString LC.ByteString LC.ByteString SafeIO b
 websocket = mapB unframe frame 
             
--- | Parses the session id from the connection response.
-parseSid :: BC.ByteString -> String
-parseSid = takeWhile (/=':') . (!! 6) . lines . BC.unpack
+-- | Parser for the session id.
+parseSid :: String -> String
+parseSid = takeWhile (/=':')
